@@ -1,0 +1,42 @@
+[ -------------------------- MANEJO DE LAS ENTRRADAS EN MEMORIA -------------------------- ]
+
+1 byte EEPROM Corresponderá a la configruacion de una entrada X:
+byte EEPROM: [0,1,2,3,4,5,6,7]
+
+-- Short Prees -- habilitado por defecto
+b0: habilitar (1) o deshabilitar (1) la entrada
+b1: modo de función, normal (0), conmutado (1), por defecto 0
+b2: valor a escribir cuando se pulsa en modo normal (0,1), por defecto 1
+b3:
+
+-- Long Press --
+b4: deshabilitar (0) o habilitar (1) pulsacion larga
+b5: modo de función, normal (0), conmutado (1), por defecto 0
+b6: valor a escribir cuando se pulsa en modo normal (0,1), por defecto 1
+b7:
+
+b8: salida a controlar Short Press
+b9: salida a controlar Long Press
+
+
+
+
+
+[ -------------------------- MANEJO DE LAS SALIDAS EN MEMORIA -------------------------- ]
+
+un byte EEPROM corrsponderá la configuración de una salida X:
+byte EEPROM: [0,1,2,3,4,5,6,7]
+
+b0: ultimo estado
+b1: habilitar o deshabilitar iniciar con el ultimo estado, (por defecto 0, dehabilitado)
+b2: estado inicial de la salida al encender el esp (por defecto 0)
+
+
+
+
+
+quiero desarrollar un constructor de entrada y un contructor dew SALIDAS
+
+el contructor de salidas debe permitir definir el pin de salida y las funciones para usar con las salidas
+escribir y actualizar estado de salida
+
