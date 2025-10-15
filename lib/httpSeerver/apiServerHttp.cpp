@@ -1,11 +1,17 @@
 #include <ApiServerHttp.hpp>
 #include <handleOutput.hpp>
+#include <time_press.hpp>
 
 ApiServerHttp::ApiServerHttp() {}
 
 // -------------- Outputs ------------------
-void ApiServerHttp::getAmountOutputs(AsyncWebServerRequest *request) {};
-void ApiServerHttp::enableStartUpLastState(JsonDocument &docBody, AsyncWebServerRequest *request) {};
+void ApiServerHttp::getAmountOutputs(AsyncWebServerRequest *request) {
+  request->send(200, "application/json", "{\"amountOutputs\":" + String(HandleOutput::getInstances().size()) + "}"); 
+};
+
+void ApiServerHttp::enableStartUpLastState(JsonDocument &docBody, AsyncWebServerRequest *request) {
+
+};
 
 void ApiServerHttp::setValueStartUpLastState(JsonDocument &docBody, AsyncWebServerRequest *request) {
 
@@ -18,12 +24,12 @@ void ApiServerHttp::setValueStartUpLastState(JsonDocument &docBody, AsyncWebServ
   uint8_t action = docBody["action"];
   uint8_t outputID = relay-1;
 
-  if (relay == 0 || relay > HandleOutput::instances.size()) {
+  if (relay == 0 || relay > HandleOutput::getInstances().size()) {
     request->send(400, "application/json", "{\"error\":\"Índice inválido\"}");
     return;
   }
   
-  StrcOutput output = HandleOutput::instances.at(outputID)->getOutput();
+  StrcOutput output = HandleOutput::getInstances().at(outputID)->getOutput();
   HandleOutput::writeOutput(output, action);
   const uint8_t stateOutput = HandleOutput::getSateOutput(output);
 
@@ -52,4 +58,19 @@ void ApiServerHttp::setValueModeNormalLP(JsonDocument &docBody, AsyncWebServerRe
 
 
 // -------------- Time Press -------------------
-void ApiServerHttp::setTimeShortPress(JsonDocument &docBody, AsyncWebServerRequest *request) {};
+void ApiServerHttp::setTimeLongPress(JsonDocument &docBody, AsyncWebServerRequest *request) {
+  if (!docBody.containsKey("timeLongPress")) {
+    request->send(400, "application/json", "{\"error\":\"Faltan campos 'timeLongPress'\"}");
+    return;
+  }
+
+  uint8_t timeLongPress = docBody["timeLongPress"];
+
+  if (timeLongPress == 0 ) {
+    request->send(400, "application/json", "{\"error\":\"Índice inválido\"}");
+    return;
+  };
+  // const timeLP = TimePress
+  // setTimeLongPress(timeLongPress);
+  request->send(200, "application/json", "{\"status\":\"OK\"}");
+};

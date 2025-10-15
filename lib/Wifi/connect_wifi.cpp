@@ -1,13 +1,7 @@
 #include <connect_wifi.hpp>
 
-// const char* ssid = "ZARACHE BARRIOS";
-// const char* password = "FZ11223455";
-
-const char* ssid = "Redmi Fadul";
-const char* password = "isabella31";
-
-// const char* ssid = "Galaxy S23 FE ZB";
-// const char* password = "112345678*+*";
+const char* ssid = "ZARACHE BARRIOS";
+const char* password = "FZ11223455";
 
 const char* ssidAP = "ESP32";
 const char* passwordAP = "password";

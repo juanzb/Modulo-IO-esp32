@@ -31,5 +31,5 @@ class ApiServerHttp {
 
 
   // -------------- Time Press -------------------
-  static void setTimeShortPress(JsonDocument &docBody, AsyncWebServerRequest *request);
+  static void setTimeLongPress(JsonDocument &docBody, AsyncWebServerRequest *request);
 };

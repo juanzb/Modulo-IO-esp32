@@ -25,6 +25,16 @@ void parseBody(AsyncWebServerRequest *request, uint8_t *data, size_t len, String
 
 // ─────────────────────── setup ───────────────────────
 void setupHttpServer() {
+  
+  // ───────────── GET amount outputs ─────────────
+  server.on(
+    "/api/amount/relay", 
+    HTTP_GET, 
+    [](AsyncWebServerRequest *request){
+      ApiServerHttp::getAmountOutputs(request);
+    }
+  );
+
   // ───────────── Ruta para recibir JSON ─────────────
   server.on(
     "/api/action/relay", 
@@ -40,10 +50,35 @@ void setupHttpServer() {
     }
   );
 
-  // ───────────── Ruta simple GET ─────────────
-  server.on("/api/test", HTTP_GET, [](AsyncWebServerRequest *req){
-    req->send(200, "application/json", "{\"pong\":true}");
-  });
+  server.on(
+    "/api/setup/relay", 
+    HTTP_POST, 
+    [](AsyncWebServerRequest *request){}, 
+    NULL,   
+    [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+      Serial.println("SOLICITUD HTTP RECIBIDA");
+      String bodyString;
+      JsonDocument bodyDoc = DynamicJsonDocument(512);
+      parseBody(request, data, len, bodyString, bodyDoc);
+      ApiServerHttp::setTimeLongPress(bodyDoc, request);
+    }
+  );
+
+
+  // ------------------- POST set time long press -------------------
+  server.on(
+    "/api/setup/timePress/long", 
+    HTTP_POST, 
+    [](AsyncWebServerRequest *request){}, 
+    NULL,   
+    [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+      Serial.println("SOLICITUD HTTP RECIBIDA");
+      String bodyString;
+      JsonDocument bodyDoc = DynamicJsonDocument(512);
+      parseBody(request, data, len, bodyString, bodyDoc);
+      ApiServerHttp::setValueStartUpLastState(bodyDoc, request);
+    }
+  );
 
   // Iniciar servidor
   server.begin();
