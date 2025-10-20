@@ -21,6 +21,10 @@ void HandleOutput::startUpOutputs() {
     pinMode(out->output.pin, OUTPUT);
     uint8_t registerGet = EEPROM.read(out->output.addrEeprom);
     uint8_t valueStart = handleBit::readBit(registerGet, out->output.ADDR_BIT_LAST_STATE);
+    Serial.print("START UP OUTPUT PIN: ");
+    Serial.print(out->output.pin);
+    Serial.print(", VALUE: ");
+    Serial.println(valueStart);
     digitalWrite(out->output.pin, valueStart);
   }
   Serial.println("START UP OUTPUTS");
@@ -45,8 +49,18 @@ void HandleOutput::enableStartUpLastValue(StrcOutput &output, uint8_t value) {
 
 void HandleOutput::setValueStartUp(StrcOutput &output, uint8_t value) {
   uint8_t registerEeprom = EEPROM.read(output.addrEeprom);
+    for (int i = 7; i >= 0; i--) {
+    Serial.print(bitRead(registerEeprom, i));
+  }
   registerEeprom &= ~(1 << output.ADDR_BIT_VALUE_STARTUP);
   registerEeprom |= (value << output.ADDR_BIT_VALUE_STARTUP);
+    for (int i = 7; i >= 0; i--) {
+    Serial.print(bitRead(registerEeprom, i));
+  }
+  Serial.print("SET VALUE START UP OUTPUT PIN EEPROM: ");
+  Serial.print(output.pin);
+  Serial.print(", VALUE: ");
+  Serial.println(value);
   EEPROM.write(output.addrEeprom, registerEeprom);
   EEPROM.commit();
 }

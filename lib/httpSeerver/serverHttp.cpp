@@ -27,31 +27,29 @@ void parseBody(AsyncWebServerRequest *request, uint8_t *data, size_t len, String
 void setupHttpServer() {
   
   // ───────────── GET amount outputs ─────────────
-  server.on(
-    "/api/amount/relay", 
-    HTTP_GET, 
-    [](AsyncWebServerRequest *request){
+  server.on("/api/output/amount", HTTP_GET, [](AsyncWebServerRequest *request)
+    {
       ApiServerHttp::getAmountOutputs(request);
     }
   );
 
   // ───────────── Ruta para recibir JSON ─────────────
   server.on(
-    "/api/action/relay", 
+    "/api/output/action", 
     HTTP_POST, 
     [](AsyncWebServerRequest *request){}, 
-    NULL,   
+    NULL,
     [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
       Serial.println("SOLICITUD HTTP RECIBIDA");
       String bodyString;
       JsonDocument bodyDoc = DynamicJsonDocument(512);
       parseBody(request, data, len, bodyString, bodyDoc);
-      ApiServerHttp::setValueStartUpLastState(bodyDoc, request);
+      ApiServerHttp::writeValueOutput(bodyDoc, request);
     }
   );
 
   server.on(
-    "/api/setup/relay", 
+    "/api/output/setup/startUp/value", 
     HTTP_POST, 
     [](AsyncWebServerRequest *request){}, 
     NULL,   
@@ -60,7 +58,21 @@ void setupHttpServer() {
       String bodyString;
       JsonDocument bodyDoc = DynamicJsonDocument(512);
       parseBody(request, data, len, bodyString, bodyDoc);
-      ApiServerHttp::setTimeLongPress(bodyDoc, request);
+      ApiServerHttp::setValueStartUp(bodyDoc, request);
+    }
+  );
+
+  server.on(
+    "/api/output/setup/startUp/lastState", 
+    HTTP_POST, 
+    [](AsyncWebServerRequest *request){}, 
+    NULL,   
+    [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+      Serial.println("SOLICITUD HTTP RECIBIDA");
+      String bodyString;
+      JsonDocument bodyDoc = DynamicJsonDocument(512);
+      parseBody(request, data, len, bodyString, bodyDoc);
+      ApiServerHttp::enableStartUpLastState(bodyDoc, request);
     }
   );
 
@@ -76,7 +88,7 @@ void setupHttpServer() {
       String bodyString;
       JsonDocument bodyDoc = DynamicJsonDocument(512);
       parseBody(request, data, len, bodyString, bodyDoc);
-      ApiServerHttp::setValueStartUpLastState(bodyDoc, request);
+      ApiServerHttp::setTimeLongPress(bodyDoc, request);
     }
   );
 

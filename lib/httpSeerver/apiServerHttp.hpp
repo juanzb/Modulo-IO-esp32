@@ -2,20 +2,15 @@
 #include <ESPAsyncWebServer.h>
 #include <ArduinoJson.h>
 
-enum class EnableAPI: uint8_t {
-  FALSE = 0,
-  TRUE = 1,
-};
-
 class ApiServerHttp {
   public:
   ApiServerHttp();
 
   // -------------- Outputs ------------------
   static void getAmountOutputs(AsyncWebServerRequest *request);
+  static void writeValueOutput(JsonDocument &docBody, AsyncWebServerRequest *request);
+  static void setValueStartUp(JsonDocument &docBody, AsyncWebServerRequest *request);
   static void enableStartUpLastState(JsonDocument &docBody, AsyncWebServerRequest *request);
-  static void setValueStartUpLastState(JsonDocument &docBody, AsyncWebServerRequest *request);
-
 
   // -------------- Inputs -------------------
   // Short Press

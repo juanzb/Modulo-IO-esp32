@@ -9,19 +9,15 @@ void ApiServerHttp::getAmountOutputs(AsyncWebServerRequest *request) {
   request->send(200, "application/json", "{\"amountOutputs\":" + String(HandleOutput::getInstances().size()) + "}"); 
 };
 
-void ApiServerHttp::enableStartUpLastState(JsonDocument &docBody, AsyncWebServerRequest *request) {
 
-};
-
-void ApiServerHttp::setValueStartUpLastState(JsonDocument &docBody, AsyncWebServerRequest *request) {
-
-  if (!docBody.containsKey("relay") || !docBody.containsKey("action")) {
-    request->send(400, "application/json", "{\"error\":\"Faltan campos 'relay' o 'action'\"}");
+void ApiServerHttp::writeValueOutput(JsonDocument &docBody, AsyncWebServerRequest *request) {
+  if (!docBody.containsKey("relay") || !docBody.containsKey("value")) {
+    request->send(400, "application/json", "{\"error\":\"Faltan campos 'relay' o 'value'\"}");
     return;
   }
 
   uint8_t relay = docBody["relay"];
-  uint8_t action = docBody["action"];
+  uint8_t value = docBody["value"];
   uint8_t outputID = relay-1;
 
   if (relay == 0 || relay > HandleOutput::getInstances().size()) {
@@ -30,18 +26,77 @@ void ApiServerHttp::setValueStartUpLastState(JsonDocument &docBody, AsyncWebServ
   }
   
   StrcOutput output = HandleOutput::getInstances().at(outputID)->getOutput();
-  HandleOutput::writeOutput(output, action);
+  HandleOutput::writeOutput(output, value);
   const uint8_t stateOutput = HandleOutput::getSateOutput(output);
 
   // Responder en JSON
   JsonDocument response = DynamicJsonDocument (128);
-  response["status"] = stateOutput;
   response["relay"] = relay;
+  response["status"] = stateOutput;
 
   String outRequest;
   serializeJson(response, outRequest);
   request->send(200, "application/json", outRequest);
 };
+
+
+void ApiServerHttp::setValueStartUp(JsonDocument &docBody, AsyncWebServerRequest *request) {
+  if (!docBody.containsKey("relay") || !docBody.containsKey("value")) {
+    request->send(400, "application/json", "{\"error\":\"Faltan campos 'relay' o 'value'\"}");
+    return;
+  }
+
+  uint8_t relay = docBody["relay"];
+  uint8_t value = docBody["value"];
+  uint8_t outputID = relay-1;
+
+  if (relay == 0 || relay > HandleOutput::getInstances().size()) {
+    request->send(400, "application/json", "{\"error\":\"Índice inválido\"}");
+    return;
+  }
+  
+  StrcOutput output = HandleOutput::getInstances().at(outputID)->getOutput();
+  HandleOutput::setValueStartUp(output, value);
+
+  // Responder en JSON
+  JsonDocument response = DynamicJsonDocument (128);
+  response["relay"] = relay;
+  response["stateStartUpValue"] = value;
+
+  String outRequest;
+  serializeJson(response, outRequest);
+  request->send(200, "application/json", outRequest);
+};
+
+
+void ApiServerHttp::enableStartUpLastState(JsonDocument &docBody, AsyncWebServerRequest *request) {
+  if (!docBody.containsKey("relay") || !docBody.containsKey("value")) {
+    request->send(400, "application/json", "{\"error\":\"Faltan campos 'relay' o 'value'\"}");
+    return;
+  }
+
+  uint8_t relay = docBody["relay"];
+  uint8_t value = docBody["value"];
+  uint8_t outputID = relay-1;
+
+  if (relay == 0 || relay > HandleOutput::getInstances().size()) {
+    request->send(400, "application/json", "{\"error\":\"Índice inválido\"}");
+    return;
+  }
+  
+  StrcOutput output = HandleOutput::getInstances().at(outputID)->getOutput();
+  HandleOutput::enableStartUpLastValue(output, value);
+
+  // Responder en JSON
+  JsonDocument response = DynamicJsonDocument (128);
+  response["relay"] = relay;
+  response["stateStartUpLastValue"] = value;
+
+  String outRequest;
+  serializeJson(response, outRequest);
+  request->send(200, "application/json", outRequest);
+};
+
 
 
 // -------------- Inputs -------------------
