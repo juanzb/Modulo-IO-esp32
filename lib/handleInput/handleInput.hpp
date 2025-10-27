@@ -8,12 +8,10 @@
 
 class HandleInput {
   private:
-    StrcInput inputIO;
-    StrcOutput outputIOShortPress = StrcOutput(0, 0);
-    StrcOutput outputIOLongPress = StrcOutput(0, 0);
+    StrcInput input;
+    StrcOutput outputToInputShortPress = StrcOutput(0, 0);
+    StrcOutput outputToInputLongPress = StrcOutput(0, 0);
     StateIO stateInput;
-    uint8_t initStateOutputIOShortPress;
-    uint8_t initStateOutputIOLongPress;
     uint64_t timeInputActive;
     uint64_t timeOfEvent;
     EventPress eventPressed;
@@ -22,21 +20,27 @@ class HandleInput {
   public:
     static std::vector<HandleInput*>& getInstances();
 
-    HandleInput(StrcInput _inputIO);
+    HandleInput(StrcInput _input);
 
     static void setupInputs();
-    static void loopInputs();   
+    static void loopInputs();
+    StrcInput getInput();
+
     
   private:
-    void configInitIO();
+    void configInitInput();
     void eventInputDetected();
     void actionByEventIdentified();
     void handleInputIO(EventPress &event);
     StateIO readInput(uint8_t &pinToRead);
     
   public:
-    void setOutputIOShortPress(StrcOutput newPinOutput);
-    void setOutputIOLongPress(StrcOutput newPinOutput);
+    void enableInputShortPress(EnableDisable value);
+    void enableInputLongPress(EnableDisable value);
+    void setOutputInputShortPress(uint8_t outputID);
+    void setOutputInputLongPress(uint8_t outputID);
     void setModeInputShortPress(ModeInput mode);
     void setModeInputLongPress(ModeInput mode);
+    void setValueNormalModeSP(uint8_t value);
+    void setValueNormalModeLP(uint8_t value);
 };
