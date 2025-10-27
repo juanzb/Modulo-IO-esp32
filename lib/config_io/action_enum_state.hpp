@@ -33,6 +33,16 @@ enum class StateIO: uint8_t {
 
 /**
  * Inactive = 0, input/output is LOW
+ * Active = 1, input/output is HIGH
+ */
+enum class EnableDisable: uint8_t {
+  DISABLE = 0,
+  ENABLE = 1,
+};
+
+
+/**
+ * Normal = 0, Commutated = 1
  */
 enum class ModeInput: uint8_t {
   NORMAL = 0,
