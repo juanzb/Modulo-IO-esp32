@@ -13,17 +13,11 @@ class ApiServerHttp {
   static void enableStartUpLastState(JsonDocument &docBody, AsyncWebServerRequest *request);
 
   // -------------- Inputs -------------------
-  // Short Press
-  static void enableInputSP(JsonDocument &docBody, AsyncWebServerRequest *request);
-  static void setModeInputSP(JsonDocument &docBody, AsyncWebServerRequest *request);
-  static void setOutputToInputSP(JsonDocument &docBody, AsyncWebServerRequest *request);
-  static void setValueModeNormalSP(JsonDocument &docBody, AsyncWebServerRequest *request);
-  // Long Press
-  static void enableInputLP(JsonDocument &docBody, AsyncWebServerRequest *request);
-  static void setModeInputLP(JsonDocument &docBody, AsyncWebServerRequest *request);
-  static void setOutputToInputLP(JsonDocument &docBody, AsyncWebServerRequest *request);
-  static void setValueModeNormalLP(JsonDocument &docBody, AsyncWebServerRequest *request);
-
+  static void getAmountInputs(AsyncWebServerRequest *request);
+  static void enableInput(JsonDocument &docBody, AsyncWebServerRequest *request);
+  static void setModeInput(JsonDocument &docBody, AsyncWebServerRequest *request);
+  static void setOutputToInput(JsonDocument &docBody, AsyncWebServerRequest *request);
+  static void setValueModeNormalInput(JsonDocument &docBody, AsyncWebServerRequest *request);
 
   // -------------- Time Press -------------------
   static void setTimeLongPress(JsonDocument &docBody, AsyncWebServerRequest *request);

@@ -26,21 +26,19 @@ void parseBody(AsyncWebServerRequest *request, uint8_t *data, size_t len, String
 // ─────────────────────── setup ───────────────────────
 void setupHttpServer() {
   
-  // ───────────── GET amount outputs ─────────────
+  // ───────────── OUTPUTS ─────────────
   server.on("/api/output/amount", HTTP_GET, [](AsyncWebServerRequest *request)
     {
       ApiServerHttp::getAmountOutputs(request);
     }
   );
 
-  // ───────────── Ruta para recibir JSON ─────────────
   server.on(
     "/api/output/action", 
     HTTP_POST, 
     [](AsyncWebServerRequest *request){}, 
     NULL,
     [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
-      Serial.println("SOLICITUD HTTP RECIBIDA");
       String bodyString;
       JsonDocument bodyDoc = DynamicJsonDocument(512);
       parseBody(request, data, len, bodyString, bodyDoc);
@@ -54,7 +52,6 @@ void setupHttpServer() {
     [](AsyncWebServerRequest *request){}, 
     NULL,   
     [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
-      Serial.println("SOLICITUD HTTP RECIBIDA");
       String bodyString;
       JsonDocument bodyDoc = DynamicJsonDocument(512);
       parseBody(request, data, len, bodyString, bodyDoc);
@@ -68,11 +65,78 @@ void setupHttpServer() {
     [](AsyncWebServerRequest *request){}, 
     NULL,   
     [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
-      Serial.println("SOLICITUD HTTP RECIBIDA");
       String bodyString;
       JsonDocument bodyDoc = DynamicJsonDocument(512);
       parseBody(request, data, len, bodyString, bodyDoc);
       ApiServerHttp::enableStartUpLastState(bodyDoc, request);
+    }
+  );
+
+
+
+  // ------------------- INPUTS -------------------
+  server.on(
+    "/api/input/amount", 
+    HTTP_POST, 
+    [](AsyncWebServerRequest *request){}, 
+    NULL,
+    [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+      String bodyString;
+      JsonDocument bodyDoc = DynamicJsonDocument(512);
+      parseBody(request, data, len, bodyString, bodyDoc);
+      ApiServerHttp::getAmountInputs(request);
+    }
+  );
+
+  server.on(
+    "/api/input/enable",
+    HTTP_POST, 
+    [](AsyncWebServerRequest *request){}, 
+    NULL,
+    [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+      String bodyString;
+      JsonDocument bodyDoc = DynamicJsonDocument(512);
+      parseBody(request, data, len, bodyString, bodyDoc);
+      ApiServerHttp::enableInput(bodyDoc, request);
+    }
+  );
+
+  server.on(
+    "/api/input/mode", 
+    HTTP_POST, 
+    [](AsyncWebServerRequest *request){}, 
+    NULL,
+    [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+      String bodyString;
+      JsonDocument bodyDoc = DynamicJsonDocument(512);
+      parseBody(request, data, len, bodyString, bodyDoc);
+      ApiServerHttp::setModeInput(bodyDoc, request);
+    }
+  );
+
+  server.on(
+    "/api/input/set/output", 
+    HTTP_POST, 
+    [](AsyncWebServerRequest *request){}, 
+    NULL,
+    [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+      String bodyString;
+      JsonDocument bodyDoc = DynamicJsonDocument(512);
+      parseBody(request, data, len, bodyString, bodyDoc);
+      ApiServerHttp::setOutputToInput(bodyDoc, request);
+    }
+  );
+
+  server.on(
+    "/api/input/setup/mode/normal/value", 
+    HTTP_POST, 
+    [](AsyncWebServerRequest *request){}, 
+    NULL,
+    [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+      String bodyString;
+      JsonDocument bodyDoc = DynamicJsonDocument(512);
+      parseBody(request, data, len, bodyString, bodyDoc);
+      ApiServerHttp::setValueModeNormalInput(bodyDoc, request);
     }
   );
 
@@ -84,7 +148,6 @@ void setupHttpServer() {
     [](AsyncWebServerRequest *request){}, 
     NULL,   
     [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
-      Serial.println("SOLICITUD HTTP RECIBIDA");
       String bodyString;
       JsonDocument bodyDoc = DynamicJsonDocument(512);
       parseBody(request, data, len, bodyString, bodyDoc);
