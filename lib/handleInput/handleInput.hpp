@@ -9,8 +9,6 @@
 class HandleInput {
   private:
     StrcInput input;
-    StrcOutput outputToInputShortPress = StrcOutput(0, 0);
-    StrcOutput outputToInputLongPress = StrcOutput(0, 0);
     StateIO stateInput;
     uint64_t timeInputActive;
     uint64_t timeOfEvent;
@@ -22,7 +20,7 @@ class HandleInput {
 
     HandleInput(StrcInput _input);
 
-    static void setupInputs();
+    static void startUpInputs();
     static void loopInputs();
     StrcInput getInput();
 

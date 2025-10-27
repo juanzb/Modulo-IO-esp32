@@ -16,7 +16,7 @@
     return instances;
   }   
 
-  void HandleInput::setupInputs() {
+  void HandleInput::startUpInputs() {
     for (HandleInput* io : HandleInput::getInstances()) {
       io->configInitInput();
     }
