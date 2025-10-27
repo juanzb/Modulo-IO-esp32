@@ -15,18 +15,10 @@ void setup() {
   EEPROM.begin(EEPROM_SIZE);
   wifiSetup();
   setupHttpServer();
-  HandleInput::setupInputs();
-  HandleOutput::startUpOutputs();
+  startUpConfigIO();
   }
 
 void loop() {
   HandleInput::loopInputs();
-
-  if(stage == 0) {
-    stage = 1;
-    Serial.println(HandleInput::getInstances().size());
-    Serial.println(HandleOutput::getInstances().size());
-  }
-
 }
 
