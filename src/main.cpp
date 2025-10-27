@@ -13,7 +13,7 @@ uint16_t timeStart = 0;
 void setup() {
   Serial.begin(9600);
   EEPROM.begin(EEPROM_SIZE);
-  wifiSetup();  
+  wifiSetup();
   setupHttpServer();
   HandleInput::setupInputs();
   HandleOutput::startUpOutputs();
@@ -25,12 +25,7 @@ void loop() {
   if(stage == 0) {
     stage = 1;
     Serial.println(HandleInput::getInstances().size());
-    HandleInput::getInstances().at(0)->setOutputIOShortPress(out_1);
-    HandleInput::getInstances().at(1)->setOutputIOShortPress(out_2);
-    HandleInput::getInstances().at(0)->setOutputIOLongPress(out_1);
-    HandleInput::getInstances().at(1)->setOutputIOLongPress(out_2);
-    Serial.println("Start ");
-    timeStart = millis();
+    Serial.println(HandleOutput::getInstances().size());
   }
 
 }
