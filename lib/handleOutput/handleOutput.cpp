@@ -1,6 +1,5 @@
 #include <Arduino.h>
 #include <cstdint>
-#include <EEPROM.h>
 #include <handleBit.hpp>
 #include <handleOutput.hpp>
 #include <vector>
@@ -18,10 +17,10 @@ HandleOutput::HandleOutput(StrcOutput _outputsList)
 void HandleOutput::startUpOutputs() {
   for (HandleOutput* out : HandleOutput::getInstances()) {
     pinMode(out->output.pin, OUTPUT);
-    uint8_t registerGet = EEPROM.read(out->output.addrEeprom);
-    uint8_t stateStartUpLastState = handleBit::readBit(registerGet, out->output.ADDR_BIT_ENABLE_STARTUP_LS);
-    uint8_t valueStartUpLastState = handleBit::readBit(registerGet, out->output.ADDR_BIT_LAST_STATE);
-    uint8_t valueStartUpDefault = handleBit::readBit(registerGet, out->output.ADDR_BIT_VALUE_STARTUP);
+    uint8_t registerGet = out->output.addrEeprom;
+    uint8_t stateStartUpLastState = handleBitEEprom::readBit(registerGet, out->output.ADDR_BIT_ENABLE_STARTUP_LS);
+    uint8_t valueStartUpLastState = handleBitEEprom::readBit(registerGet, out->output.ADDR_BIT_LAST_STATE);
+    uint8_t valueStartUpDefault = handleBitEEprom::readBit(registerGet, out->output.ADDR_BIT_VALUE_STARTUP);
     uint8_t valueStart;
     if(stateStartUpLastState == 1) {
       valueStart = valueStartUpLastState;
@@ -44,39 +43,26 @@ void HandleOutput::writeOutput(StrcOutput &output, uint8_t value) {
 }
 
 void HandleOutput::enableStartUpLastValue(StrcOutput &output, uint8_t value) {
-  uint8_t registerEeprom = EEPROM.read(output.addrEeprom);
-  registerEeprom &= ~(1 << output.ADDR_BIT_ENABLE_STARTUP_LS);
-  registerEeprom |= (value << output.ADDR_BIT_ENABLE_STARTUP_LS);
-  EEPROM.write(output.addrEeprom, registerEeprom);
-  EEPROM.commit();
+  handleBitEEprom::modifyBit(output.addrEeprom, output.ADDR_BIT_ENABLE_STARTUP_LS, value);
 }
 
 void HandleOutput::setValueStartUp(StrcOutput &output, uint8_t value) {
-  uint8_t registerEeprom = EEPROM.read(output.addrEeprom);
-  registerEeprom &= ~(1 << output.ADDR_BIT_VALUE_STARTUP);
-  registerEeprom |= (value << output.ADDR_BIT_VALUE_STARTUP);
   Serial.print("SET EEPROM VALUE START UP OUTPUT PIN: ");
   Serial.print(output.pin);
   Serial.print(", VALUE: ");
   Serial.println(value);
-  EEPROM.write(output.addrEeprom, registerEeprom);
-  EEPROM.commit();
+  handleBitEEprom::modifyBit(output.addrEeprom, output.ADDR_BIT_VALUE_STARTUP, value);
 }
 
 uint8_t HandleOutput::getSateOutput(StrcOutput &output) {
     Serial.print("GET STATE OUTPUT PIN: ");
     Serial.println(output.pin);
-    uint8_t registerGet = EEPROM.read(output.addrEeprom);
-    uint8_t stateOutput = handleBit::readBit(registerGet, output.ADDR_BIT_LAST_STATE);
+    uint8_t stateOutput = handleBitEEprom::readBit(output.addrEeprom, output.ADDR_BIT_LAST_STATE);
     return stateOutput;
 }
 
 void HandleOutput::updateSateOutput(StrcOutput &output, uint8_t value) {
-  uint8_t registerEeprom = EEPROM.read(output.addrEeprom);
-  registerEeprom &= ~(1 << output.ADDR_BIT_LAST_STATE);
-  registerEeprom |= (value << output.ADDR_BIT_LAST_STATE);
-  EEPROM.write(output.addrEeprom, registerEeprom);
-  EEPROM.commit();
+  handleBitEEprom::modifyBit(output.addrEeprom, output.ADDR_BIT_LAST_STATE, value);
 }
 
 StrcOutput HandleOutput::getOutput() {
