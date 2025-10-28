@@ -11,6 +11,7 @@ std::vector<HandleOutput*>& HandleOutput::getInstances() {
 
 HandleOutput::HandleOutput(StrcOutput _outputsList)
 : output(_outputsList) {
+  outputID = getInstances().size();
   getInstances().push_back(this);
 }
 
@@ -27,17 +28,14 @@ void HandleOutput::startUpOutputs() {
     } else {
       valueStart = valueStartUpDefault;
     }
-    Serial.print("START UP OUTPUT, ");
+    Serial.print(String("OUTPUT") + out->outputID + "START UP, " );
     writeOutput(out->output, valueStart);
   }
   Serial.println("START UP OUTPUTS");
 }
 
 void HandleOutput::writeOutput(StrcOutput &output, uint8_t value) {
-  Serial.print("WRITE OUTPUT PIN: ");
-  Serial.print(output.pin);
-  Serial.print(", VALUE: ");
-  Serial.println(value);
+  Serial.println(String("OUTPUT ") + " WRITE" + " VALUE " + value); 
   digitalWrite(output.pin, value);
   updateSateOutput(output, value);
 }

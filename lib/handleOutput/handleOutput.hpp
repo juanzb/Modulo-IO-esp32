@@ -6,6 +6,7 @@
 
 class HandleOutput {
   private:
+    uint8_t outputID;
     StrcOutput output;
 
   public:
