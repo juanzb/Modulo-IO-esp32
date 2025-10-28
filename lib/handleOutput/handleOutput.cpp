@@ -28,7 +28,7 @@ void HandleOutput::startUpOutputs() {
     } else {
       valueStart = valueStartUpDefault;
     }
-    Serial.print(String("OUTPUT") + out->outputID + "START UP, " );
+    Serial.print(String("OUTPUT ") + out->outputID + ", START UP, " );
     writeOutput(out->output, valueStart);
   }
   Serial.println("START UP OUTPUTS");
