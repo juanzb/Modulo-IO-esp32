@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <cstdint>
-#include <handleBit.hpp>
 #include <handleOutput.hpp>
+#include <handleBitEeprom/handleBitEeprom.hpp>
 #include <vector>
 
 std::vector<HandleOutput*>& HandleOutput::getInstances() {
