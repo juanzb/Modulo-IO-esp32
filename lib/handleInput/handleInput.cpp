@@ -5,16 +5,19 @@
 #include <handleBit.hpp>
 #include <handleOutput.hpp>
 
-  HandleInput::HandleInput(StrcInput _input)
-  : input (_input)
-  {
-    getInstances().push_back(this);
-  };
-
   std::vector<HandleInput*>& HandleInput::getInstances() {
     static std::vector<HandleInput*> instances;
     return instances;
   }   
+
+
+  HandleInput::HandleInput(StrcInput _input)
+  : input (_input)
+  {
+    inputID = getInstances().size();
+    getInstances().push_back(this);
+  };
+
 
   void HandleInput::startUpInputs() {
     for (HandleInput* io : HandleInput::getInstances()) {
@@ -40,8 +43,14 @@
     stateEvent = EventState::OUT_EVENT;
     uint8_t outputToControlSP = handleBitEEprom::readLowNibble(input.addrEepromAux);
     uint8_t outputToControlLP = handleBitEEprom::readHighNibble(input.addrEepromAux);
-    HandleInput::setOutputInputShortPress(outputToControlSP);
-    HandleInput::setOutputInputLongPress(outputToControlLP);
+    Serial.println(String("INPUT ") + inputID + ", OUTPUT TO CONTROL SP: " + outputToControlSP);
+    Serial.println(String("INPUT ") + inputID + ", OUTPUT TO CONTROL LP: " + outputToControlLP);
+    if (outputToControlSP < 0 || outputToControlSP > HandleOutput::getInstances().size()-1) {
+      HandleInput::setOutputInputShortPress(0);
+    } 
+    if (outputToControlLP < 0 || outputToControlLP > HandleOutput::getInstances().size()-1) {
+      HandleInput::setOutputInputLongPress(0);
+    };
   }
 
 
@@ -74,7 +83,7 @@
         if (stateEnableInputLP == EnableDisable::ENABLE) {
           HandleInput::handleInputIO(eventPressed);
         } else {
-          Serial.println("DISABLE");
+          Serial.println(String("INPUT ") + inputID + ", DISABLE");
         }
       }
     } else if (stateInput == StateIO::INACTIVE) {
@@ -85,7 +94,7 @@
         if (stateEnableInputSP == EnableDisable::ENABLE) {
           HandleInput::handleInputIO(eventPressed);
         } else {
-          Serial.println("DISABLE");
+          Serial.println(String("INPUT ") + inputID + ", DISABLE");
         }
       }
       eventPressed = EventPress::STANDBY;
@@ -104,23 +113,23 @@
       addrBitModeFuntion = input.ADDR_BIT_MODE_SP;
       addrBitValueWrite = input.ADDR_BIT_VALUE_WRITE_SP;
       outputToControl = handleBitEEprom::readLowNibble(input.addrEepromAux);
-      outputToWrite = HandleOutput::getInstances()[outputToControl]->getOutput();
+      outputToWrite = HandleOutput::getInstances().at(outputToControl)->getOutput();
     } else if ( event == EventPress::LONG) {
       addrBitModeFuntion = input.ADDR_BIT_MODE_LP;
       addrBitValueWrite = input.ADDR_BIT_VALUE_WRITE_LP;
       outputToControl = handleBitEEprom::readHighNibble(input.addrEepromAux);
-      outputToWrite = HandleOutput::getInstances()[outputToControl]->getOutput();
+      outputToWrite = HandleOutput::getInstances().at(outputToControl)->getOutput();
     }
 
     uint8_t stateBitMode = handleBitEEprom::readBit(input.addrEeprom, addrBitModeFuntion);
     ModeInput currentMode = static_cast<ModeInput>(stateBitMode);
 
     if(currentMode == ModeInput::NORMAL) {
-      Serial.print("MODE NORMAL, ");
+      Serial.print(String("INPUT ") + inputID + ", MODE NORMAL, ");
       uint8_t valueToSet = handleBitEEprom::readBit(input.addrEeprom, addrBitValueWrite);
       HandleOutput::writeOutput(outputToWrite, valueToSet);
     } else if (currentMode == ModeInput::COMMUTED) {
-      Serial.print("MODE COMMUTED, ");
+      Serial.print(String("INPUT ") + inputID + ", MODE COMMUTED, ");
       uint8_t currentStateOutput = handleBitEEprom::readBit(outputToWrite.addrEeprom, outputToWrite.ADDR_BIT_LAST_STATE);
       uint8_t valueToSet = (currentStateOutput == 1) ? 0 : 1;
       HandleOutput::writeOutput(outputToWrite, valueToSet);
@@ -130,9 +139,9 @@
 
   void HandleInput::enableInputShortPress(EnableDisable value) {
     if (value == EnableDisable::DISABLE) {
-      Serial.println("DISABLE INPUT SHORT PRESS");
+      Serial.println(String("INPUT ") + inputID + ", DISABLE SHORT PRESS");
     } else if (value == EnableDisable::ENABLE) {
-      Serial.println("ENABLE INPUT SHORT PRESS");
+      Serial.println(String("INPUT ") + inputID + ", ENABLE SHORT PRESS");
     }
     uint8_t setValue = static_cast<uint8_t>(value);
     handleBitEEprom::modifyBit(input.addrEeprom, input.ADDR_BIT_ENABLE_SP, setValue);
@@ -141,9 +150,9 @@
 
   void HandleInput::enableInputLongPress(EnableDisable value) {
     if (value == EnableDisable::DISABLE) {
-      Serial.println("DISABLE INPUT LONG PRESS");
+      Serial.println(String("INPUT ") + inputID + ", DISABLE LONG PRESS");
     } else if (value == EnableDisable::ENABLE) {
-      Serial.println("ENABLE INPUT LONG PRESS");
+      Serial.println(String("INPUT ") + inputID + ", ENABLE LONG PRESS");
     }
     uint8_t setValue = static_cast<uint8_t>(value);
     handleBitEEprom::modifyBit(input.addrEeprom, input.ADDR_BIT_ENABLE_LP, setValue);
@@ -151,24 +160,22 @@
 
 
   void HandleInput::setOutputInputShortPress(uint8_t outputID) {
-    Serial.print("SET OUTPUT SHORT PRESS: ");
-    Serial.println(outputID);
+    Serial.println(String("INPUT ") + inputID + ", SET OUTPUT SHORT PRESS: " + outputID);
     handleBitEEprom::writeLowNibble(input.addrEepromAux, outputID);
   }
 
 
   void HandleInput::setOutputInputLongPress(uint8_t outputID) {
-    Serial.print("SET OUTPUT LONG PRESS: ");
-    Serial.println(outputID);
+    Serial.println(String("INPUT ") + inputID + ", SET OUTPUT LONG PRESS: " + outputID);
     handleBitEEprom::writeHighNibble(input.addrEepromAux, outputID);
   }
 
 
   void HandleInput::setModeInputShortPress (ModeInput mode) {
     if (mode == ModeInput::NORMAL) {
-      Serial.println("CHANGE INPUT SHORT PRESS TO NORMAL");
+      Serial.println(String("INPUT ") + inputID + ", CHANGE SHORT PRESS TO NORMAL");
     } else if (mode == ModeInput::COMMUTED) {
-      Serial.println("CHANGE INPUT SHORT PRESS TO COMMUTED");
+      Serial.println(String("INPUT ") + inputID + ", CHANGE SHORT PRESS TO COMMUTED");
     }
     uint8_t valueToSet = static_cast<uint8_t>(mode);
     handleBitEEprom::modifyBit(input.addrEeprom, input.ADDR_BIT_MODE_SP, valueToSet);
@@ -177,24 +184,22 @@
 
   void HandleInput::setModeInputLongPress (ModeInput mode) {
     if (mode == ModeInput::NORMAL) {
-      Serial.println("CHANGE INPUT LONG PRESS TO NORMAL");
+      Serial.println(String("INPUT ") + inputID + ", CHANGE LONG PRESS TO NORMAL");
     } else if (mode == ModeInput::COMMUTED) {
-      Serial.println("CHANGE INPUT LONG PRESS TO COMMUTED");
+      Serial.println(String("INPUT ") + inputID + ", CHANGE LONG PRESS TO COMMUTED");
     }
     uint8_t valueToSet = static_cast<uint8_t>(mode); 
     handleBitEEprom::modifyBit(input.addrEeprom, input.ADDR_BIT_MODE_LP, valueToSet);
   }
   
   void HandleInput::setValueNormalModeSP(uint8_t value) {
-    Serial.print("SET VALUE INPUT SHORT PRESS: ");
-    Serial.println(value);
+    Serial.println(String("INPUT ") + inputID + ", SET VALUE NORMAL MODE SHORT PRESS: " + value);
     handleBitEEprom::modifyBit(input.addrEeprom, input.ADDR_BIT_VALUE_WRITE_SP, value);
   };
   
   
   void HandleInput::setValueNormalModeLP(uint8_t value) {
-    Serial.print("SET VALUE INPUT LONG PRESS: ");
-    Serial.println(value);
+    Serial.println(String("INPUT ") + inputID + ", SET VALUE NORMAL MODE LONG PRESS: " + value);
     handleBitEEprom::modifyBit(input.addrEeprom, input.ADDR_BIT_VALUE_WRITE_LP, value);
   };
   

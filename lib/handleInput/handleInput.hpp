@@ -8,6 +8,7 @@
 
 class HandleInput {
   private:
+    uint8_t inputID;
     StrcInput input;
     StateIO stateInput;
     uint64_t timeInputActive;
