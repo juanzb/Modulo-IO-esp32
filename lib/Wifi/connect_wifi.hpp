@@ -1,27 +1,33 @@
 #pragma once
+
 #include <WiFi.h>
-#include <Arduino.h>
+#include <ArduinoJson.h>
 #include <LittleFS.h>
 
-struct ConfigNetwork {
-    bool apMode;
-    String ssid;
-    String pass;
-    int deviceID;
+struct WiFiConfig {
+    bool apMode = true;
+    String ssid = "";
+    String pass = "";
+    uint32_t deviceID = 0;
 };
 
 class WiFiManager {
 public:
     WiFiManager();
-    void begin();
-    void loadConfig();
-    bool saveConfig(bool apMode, const String& ssid, const String& pass, int deviceID);
-    bool connectToWiFi();
-    bool startAccessPoint(const String& apPassword = "12345678"); // Inicia modo AP (opcional contraseña)
-    void stopAccessPoint();                                       // Detiene modo AP
-    void scanNetworks();
-    void reconnectIfNeeded();
+
+    void begin();                     // Inicializa WiFi según configuración
+    bool initWiFi();                   // Inicializa WiFi STA
+    String scanNetworks();               // Escanea redes disponibles
+    bool startAccessPoint(const String& apPassword = "12345678"); // Activa AP
+    void stopAccessPoint();            // Desactiva AP
+    bool connectToWiFi();              // Conecta a la red configurada
+    void reconnectIfNeeded();          // Reconexión controlada
+    bool changeNetwork(const String& ssid, const String& pass); // Cambia red WiFi
 
 private:
-    ConfigNetwork config;
+    WiFiConfig config;
+
+    void loadConfig();                 // Carga configuración de LittleFS
+    bool saveConfig();                 // Guarda configuración en LittleFS
+    String getAPName();                // Genera nombre único AP
 };
