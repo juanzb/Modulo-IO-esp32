@@ -330,7 +330,7 @@ void ApiServerHttp::conectToWifi(JsonDocument &docBody, AsyncWebServerRequest *r
   response["deviceID"] = deviceID;
   String outRequest;
 
-  bool stateSaveConfig = wifi.saveConfig(apMode, ssid, password, deviceID);
+  bool stateSaveConfig = wifi.changeNetwork(ssid, password);
   if (!stateSaveConfig) {
     response["description"] = "No se pudo guardar la configuración";
     serializeJson(response, outRequest);
@@ -348,6 +348,20 @@ void ApiServerHttp::conectToWifi(JsonDocument &docBody, AsyncWebServerRequest *r
   response["description"] = "conexion establecida correctamente";
   serializeJson(response, outRequest);
   request->send(200, "application/json", outRequest);
+};
+
+
+void ApiServerHttp::scannerWifi(JsonDocument &docBody, AsyncWebServerRequest *request) {
+  WiFiManager wifi;
+  String networksJson = wifi.scanNetworks(); // Ahora scanNetworks devuelve JSON
+  request->send(200, "application/json", networksJson);
+
+  // JsonDocument response = DynamicJsonDocument (128);
+  // String outRequest;
+
+  // response["description"] = "conexion establecida correctamente";
+  // serializeJson(response, outRequest);
+  // request->send(200, "application/json", outRequest);
 };
 
 

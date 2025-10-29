@@ -22,6 +22,7 @@ class ApiServerHttp {
   // -------------- Wifi -------------------
   static void accesPointWifi(JsonDocument &docBody, AsyncWebServerRequest *request);
   static void conectToWifi(JsonDocument &docBody, AsyncWebServerRequest *request);
+  static void scannerWifi(JsonDocument &docBody, AsyncWebServerRequest *request);
 
   // -------------- Time Press -------------------
   static void setTimeLongPress(JsonDocument &docBody, AsyncWebServerRequest *request);

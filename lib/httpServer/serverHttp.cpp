@@ -167,6 +167,19 @@ void setupHttpServer() {
     }
   );
 
+  server.on(
+    "/api/setup/wifi/scanner", 
+    HTTP_GET, 
+    [](AsyncWebServerRequest *request){},
+    NULL,   
+    [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+      String bodyString;
+      JsonDocument bodyDoc = DynamicJsonDocument(512);
+      parseBody(request, data, len, bodyString, bodyDoc);
+      ApiServerHttp::scannerWifi(bodyDoc, request);
+    }
+  );
+
 
   // ------------------- POST set time long press -------------------
   server.on(
