@@ -12,7 +12,7 @@ int stage = 0;
 uint16_t timeStart = 0;
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   EEPROM.begin(EEPROM_SIZE);
   wifi.begin();
   setupHttpServer();
