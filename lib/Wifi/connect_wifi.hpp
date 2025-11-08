@@ -3,6 +3,9 @@
 #include <WiFi.h>
 #include <ArduinoJson.h>
 #include <LittleFS.h>
+#include <vector>
+#include <map>
+#include <string>
 
 struct WiFiConfig {
     bool apMode = true;
@@ -17,7 +20,7 @@ public:
 
     void begin();                     // Inicializa WiFi según configuración
     bool initWiFi();                   // Inicializa WiFi STA
-    String scanNetworks();               // Escanea redes disponibles
+    std::vector<std::map<String, String>> scanNetworks();               // Escanea redes disponibles
     bool startAccessPoint(const String& apPassword = "12345678"); // Activa AP
     void stopAccessPoint();            // Desactiva AP
     bool connectToWiFi();              // Conecta a la red configurada

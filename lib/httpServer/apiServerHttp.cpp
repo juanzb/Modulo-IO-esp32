@@ -353,15 +353,13 @@ void ApiServerHttp::conectToWifi(JsonDocument &docBody, AsyncWebServerRequest *r
 
 void ApiServerHttp::scannerWifi(JsonDocument &docBody, AsyncWebServerRequest *request) {
   WiFiManager wifi;
-  String networksJson = wifi.scanNetworks(); // Ahora scanNetworks devuelve JSON
-  request->send(200, "application/json", networksJson);
+  std::vector<std::map<String, String>> networksJson = wifi.scanNetworks();
+  
+  JsonDocument response = DynamicJsonDocument (2048);
+  String outRequest;
 
-  // JsonDocument response = DynamicJsonDocument (128);
-  // String outRequest;
-
-  // response["description"] = "conexion establecida correctamente";
-  // serializeJson(response, outRequest);
-  // request->send(200, "application/json", outRequest);
+  serializeJson(response, outRequest);
+  request->send(200, "application/json", outRequest);
 };
 
 
