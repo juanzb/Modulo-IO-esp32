@@ -1,11 +1,12 @@
 #include <config_io.hpp>
 #include <EEPROM.h>
 #include <serverHttp.hpp>
+#include <ApiServerHttp.hpp>
 #include <connect_wifi.hpp>
 #include <handleOutput.hpp>
 #include <handleInput.hpp>
 
-WiFiManager wifi;
+WiFiManager& wifi = WiFiManager::instance();
 
 #define EEPROM_SIZE 12 // Tamaño de la EEPROM definida desde laEEPROM_ADDR_B00 hasta las EEPROM_ADDR_B11
 int stage = 0;
@@ -20,7 +21,6 @@ void setup() {
   }
 
 void loop() {
-  wifi.reconnectIfNeeded();
   HandleInput::loopInputs();
 }
 

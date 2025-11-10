@@ -4,10 +4,10 @@
 #include <struct_io.hpp>
 #include <apiServerHttp.hpp>
 
-
 AsyncWebServer server(80);
+ApiServerHttp apiServerHandler;
 
-// ─────────────── Función para parsear JSON ───────────────
+// ==================== Función para parsear JSON ====================
 void parseBody(AsyncWebServerRequest *request, uint8_t *data, size_t len, String &bodyString, JsonDocument &bodyDoc) {
   bodyString.reserve(len);
   bodyString.concat((const char*)data, len);
@@ -23,12 +23,13 @@ void parseBody(AsyncWebServerRequest *request, uint8_t *data, size_t len, String
 }
 
 
-// ─────────────────────── setup ───────────────────────
+// ===================== setup =====================
 void setupHttpServer() {
   
-  // ───────────── OUTPUTS ─────────────
-  server.on("/api/output/amount", HTTP_GET, [](AsyncWebServerRequest *request)
-    {
+  // ====================== OUTPUTS ======================
+  server.on("/api/output/amount", 
+    HTTP_GET, 
+    [](AsyncWebServerRequest *request) {
       ApiServerHttp::getAmountOutputs(request);
     }
   );
@@ -40,7 +41,7 @@ void setupHttpServer() {
     NULL,
     [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
       String bodyString;
-      JsonDocument bodyDoc = DynamicJsonDocument(512);
+      JsonDocument bodyDoc;
       parseBody(request, data, len, bodyString, bodyDoc);
       ApiServerHttp::writeValueOutput(bodyDoc, request);
     }
@@ -53,7 +54,7 @@ void setupHttpServer() {
     NULL,   
     [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
       String bodyString;
-      JsonDocument bodyDoc = DynamicJsonDocument(512);
+      JsonDocument bodyDoc;
       parseBody(request, data, len, bodyString, bodyDoc);
       ApiServerHttp::setValueStartUp(bodyDoc, request);
     }
@@ -66,7 +67,7 @@ void setupHttpServer() {
     NULL,   
     [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
       String bodyString;
-      JsonDocument bodyDoc = DynamicJsonDocument(512);
+      JsonDocument bodyDoc;
       parseBody(request, data, len, bodyString, bodyDoc);
       ApiServerHttp::enableStartUpLastState(bodyDoc, request);
     }
@@ -74,7 +75,7 @@ void setupHttpServer() {
 
 
 
-  // ------------------- INPUTS -------------------
+  // ========================= INPUTS =========================
   server.on(
     "/api/input/amount", 
     HTTP_POST, 
@@ -82,7 +83,7 @@ void setupHttpServer() {
     NULL,
     [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
       String bodyString;
-      JsonDocument bodyDoc = DynamicJsonDocument(512);
+      JsonDocument bodyDoc;
       parseBody(request, data, len, bodyString, bodyDoc);
       ApiServerHttp::getAmountInputs(request);
     }
@@ -95,7 +96,7 @@ void setupHttpServer() {
     NULL,
     [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
       String bodyString;
-      JsonDocument bodyDoc = DynamicJsonDocument(512);
+      JsonDocument bodyDoc;
       parseBody(request, data, len, bodyString, bodyDoc);
       ApiServerHttp::enableInput(bodyDoc, request);
     }
@@ -108,7 +109,7 @@ void setupHttpServer() {
     NULL,
     [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
       String bodyString;
-      JsonDocument bodyDoc = DynamicJsonDocument(512);
+      JsonDocument bodyDoc;
       parseBody(request, data, len, bodyString, bodyDoc);
       ApiServerHttp::setModeInput(bodyDoc, request);
     }
@@ -121,7 +122,7 @@ void setupHttpServer() {
     NULL,
     [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
       String bodyString;
-      JsonDocument bodyDoc = DynamicJsonDocument(512);
+      JsonDocument bodyDoc;
       parseBody(request, data, len, bodyString, bodyDoc);
       ApiServerHttp::setOutputToInput(bodyDoc, request);
     }
@@ -134,23 +135,25 @@ void setupHttpServer() {
     NULL,
     [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
       String bodyString;
-      JsonDocument bodyDoc = DynamicJsonDocument(512);
+      JsonDocument bodyDoc;
       parseBody(request, data, len, bodyString, bodyDoc);
       ApiServerHttp::setValueModeNormalInput(bodyDoc, request);
     }
   );
 
-  // ------------------- Wifi -------------------
+
+
+  // ========================= Wifi =========================
   server.on(
     "/api/setup/wifi/AP", 
     HTTP_POST, 
     [](AsyncWebServerRequest *request){}, 
-    NULL,   
+    NULL,
     [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
       String bodyString;
-      JsonDocument bodyDoc = DynamicJsonDocument(512);
+      JsonDocument bodyDoc;
       parseBody(request, data, len, bodyString, bodyDoc);
-      ApiServerHttp::accesPointWifi(bodyDoc, request);
+      apiServerHandler.accesPointWifi(bodyDoc, request);
     }
   );
 
@@ -158,30 +161,34 @@ void setupHttpServer() {
     "/api/setup/wifi/connect", 
     HTTP_POST, 
     [](AsyncWebServerRequest *request){}, 
-    NULL,   
+    NULL,
     [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
       String bodyString;
-      JsonDocument bodyDoc = DynamicJsonDocument(512);
+      JsonDocument bodyDoc;
       parseBody(request, data, len, bodyString, bodyDoc);
-      ApiServerHttp::conectToWifi(bodyDoc, request);
+      apiServerHandler.conectToWifi(bodyDoc, request);
     }
   );
 
   server.on(
-    "/api/setup/wifi/scanner", 
+    "/api/setup/wifi/scanner/start", 
     HTTP_GET, 
-    [](AsyncWebServerRequest *request){},
-    NULL,   
-    [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
-      String bodyString;
-      JsonDocument bodyDoc = DynamicJsonDocument(512);
-      parseBody(request, data, len, bodyString, bodyDoc);
-      ApiServerHttp::scannerWifi(bodyDoc, request);
+    [](AsyncWebServerRequest *request){
+      apiServerHandler.scannerWifi(request);
+    }
+  );
+
+  server.on(
+    "/api/setup/wifi/scanner/result", 
+    HTTP_GET, 
+    [](AsyncWebServerRequest *request){
+      apiServerHandler.getScannerWifiResult(request);
     }
   );
 
 
-  // ------------------- POST set time long press -------------------
+
+  // ========================= POST set time long press =========================
   server.on(
     "/api/setup/timePress/long", 
     HTTP_POST, 
@@ -189,7 +196,7 @@ void setupHttpServer() {
     NULL,   
     [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
       String bodyString;
-      JsonDocument bodyDoc = DynamicJsonDocument(512);
+      JsonDocument bodyDoc;
       parseBody(request, data, len, bodyString, bodyDoc);
       ApiServerHttp::setTimeLongPress(bodyDoc, request);
     }

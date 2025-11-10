@@ -6,15 +6,16 @@
 #include <action_enum_state.hpp>
 
 ApiServerHttp::ApiServerHttp() {}
+// ApiServerHttp apiServerHandler;
 
-// -------------- Outputs ------------------
+// ===================== Outputs =====================
 void ApiServerHttp::getAmountOutputs(AsyncWebServerRequest *request) {
   request->send(200, "application/json", "{\"amountOutputs\":" + String(HandleOutput::getInstances().size()) + "}"); 
 };
 
 
 void ApiServerHttp::writeValueOutput(JsonDocument &docBody, AsyncWebServerRequest *request) {
-  if (!docBody.containsKey("output") || !docBody.containsKey("value")) {
+  if (docBody["output"].isNull() || docBody["value"].isNull()) {
     request->send(400, "application/json", "{\"error\":\"Faltan campos 'output' o 'value'\"}");
     return;
   }
@@ -32,7 +33,7 @@ void ApiServerHttp::writeValueOutput(JsonDocument &docBody, AsyncWebServerReques
   const uint8_t stateOutput = HandleOutput::getSateOutput(output);
 
   // Responder en JSON
-  JsonDocument response = DynamicJsonDocument (128);
+  JsonDocument response;
   response["output"] = outputID;
   response["status"] = stateOutput;
 
@@ -43,7 +44,7 @@ void ApiServerHttp::writeValueOutput(JsonDocument &docBody, AsyncWebServerReques
 
 
 void ApiServerHttp::setValueStartUp(JsonDocument &docBody, AsyncWebServerRequest *request) {
-  if (!docBody.containsKey("output") || !docBody.containsKey("value")) {
+  if (docBody["output"].isNull() || docBody["value"].isNull()) {
     request->send(400, "application/json", "{\"error\":\"Faltan campos 'output' o 'value'\"}");
     return;
   }
@@ -60,7 +61,7 @@ void ApiServerHttp::setValueStartUp(JsonDocument &docBody, AsyncWebServerRequest
   HandleOutput::setValueStartUp(output, value);
 
   // Responder en JSON
-  JsonDocument response = DynamicJsonDocument (128);
+  JsonDocument response;
   response["output"] = outputID;
   response["stateStartUpValue"] = value;
 
@@ -71,7 +72,7 @@ void ApiServerHttp::setValueStartUp(JsonDocument &docBody, AsyncWebServerRequest
 
 
 void ApiServerHttp::enableStartUpLastState(JsonDocument &docBody, AsyncWebServerRequest *request) {
-  if (!docBody.containsKey("output") || !docBody.containsKey("value")) {
+  if (docBody["output"].isNull() || docBody["value"].isNull()) {
     request->send(400, "application/json", "{\"error\":\"Faltan campos 'output' o 'value'\"}");
     return;
   }
@@ -88,7 +89,7 @@ void ApiServerHttp::enableStartUpLastState(JsonDocument &docBody, AsyncWebServer
   HandleOutput::enableStartUpLastValue(output, value);
 
   // Responder en JSON
-  JsonDocument response = DynamicJsonDocument (128);
+  JsonDocument response;
   response["output"] = outputID;
   response["stateStartUpLastValue"] = value;
 
@@ -99,7 +100,8 @@ void ApiServerHttp::enableStartUpLastState(JsonDocument &docBody, AsyncWebServer
 
 
 
-// -------------- Inputs -------------------
+
+// ===================== Inputs =====================
 void ApiServerHttp::getAmountInputs(AsyncWebServerRequest *request) {
   request->send(200, "application/json", "{\"amountInputs\":" + String(HandleInput::getInstances().size()) + "}"); 
 };
@@ -107,9 +109,9 @@ void ApiServerHttp::getAmountInputs(AsyncWebServerRequest *request) {
 
 void ApiServerHttp::enableInput(JsonDocument &docBody, AsyncWebServerRequest *request) {
   if (
-    !docBody.containsKey("input") 
-    || !docBody.containsKey("valueEnable") 
-    || !docBody.containsKey("pressType")
+    docBody["input"].isNull() 
+    || docBody["valueEnable"].isNull() 
+    || docBody["pressType"].isNull()
   ) {
     request->send(400, "application/json", "{\"error\":\"Faltan campos 'input', 'valueEnable' o 'pressType'\"}");
     return;
@@ -131,7 +133,7 @@ void ApiServerHttp::enableInput(JsonDocument &docBody, AsyncWebServerRequest *re
     return;
   }
   
-  JsonDocument response = DynamicJsonDocument (128);
+  JsonDocument response;
   
   if (pressTypeID == 0) { // Short Press
     HandleInput::getInstances().at(inputID)->enableInputShortPress(valueEnable);
@@ -151,9 +153,9 @@ void ApiServerHttp::enableInput(JsonDocument &docBody, AsyncWebServerRequest *re
 
 void ApiServerHttp::setModeInput(JsonDocument &docBody, AsyncWebServerRequest *request) {
   if (
-    !docBody.containsKey("input") 
-    || !docBody.containsKey("mode") 
-    || !docBody.containsKey("pressType")
+    docBody["input"].isNull() 
+    || docBody["mode"].isNull() 
+    || docBody["pressType"].isNull()
   ) {
     request->send(400, "application/json", "{\"error\":\"Faltan campos 'input', 'mode' o 'pressType'\"}");
     return;
@@ -175,7 +177,7 @@ void ApiServerHttp::setModeInput(JsonDocument &docBody, AsyncWebServerRequest *r
     return;
   }
 
-  JsonDocument response = DynamicJsonDocument (128);
+  JsonDocument response;
   
   if (pressTypeID == 0) { // Short Press
     HandleInput::getInstances().at(inputID)->setModeInputShortPress(mode);
@@ -195,9 +197,9 @@ void ApiServerHttp::setModeInput(JsonDocument &docBody, AsyncWebServerRequest *r
 
 void ApiServerHttp::setOutputToInput(JsonDocument &docBody, AsyncWebServerRequest *request) {
   if (
-    !docBody.containsKey("input")
-    || !docBody.containsKey("output")
-    || !docBody.containsKey("pressType")
+    docBody["input"].isNull()
+    || docBody["output"].isNull()
+    || docBody["pressType"].isNull()
   ) {
     request->send(400, "application/json", "{\"error\":\"Faltan campos 'input', 'output' o 'pressType'\"}");
     return;
@@ -218,7 +220,7 @@ void ApiServerHttp::setOutputToInput(JsonDocument &docBody, AsyncWebServerReques
     return;
   }
   
-  JsonDocument response = DynamicJsonDocument (128);
+  JsonDocument response;
   
   if (pressTypeID == 0) { // Short Press
     HandleInput::getInstances().at(inputID)->setOutputInputShortPress(outputID);
@@ -238,9 +240,9 @@ void ApiServerHttp::setOutputToInput(JsonDocument &docBody, AsyncWebServerReques
 
 void ApiServerHttp::setValueModeNormalInput(JsonDocument &docBody, AsyncWebServerRequest *request) {
     if (
-    !docBody.containsKey("input") 
-    || !docBody.containsKey("value") 
-    || !docBody.containsKey("pressType")
+    docBody["input"].isNull() 
+    || docBody["value"].isNull() 
+    || docBody["pressType"].isNull()
   ) {
     request->send(400, "application/json", "{\"error\":\"Faltan campos 'input', 'value' o 'pressType'\"}");
     return;
@@ -261,7 +263,7 @@ void ApiServerHttp::setValueModeNormalInput(JsonDocument &docBody, AsyncWebServe
     return;
   }
   
-  JsonDocument response = DynamicJsonDocument (128);
+  JsonDocument response;
   
   if (pressTypeID == 0) { // Short Press
     HandleInput::getInstances().at(inputID)->setValueNormalModeSP(value);
@@ -278,23 +280,28 @@ void ApiServerHttp::setValueModeNormalInput(JsonDocument &docBody, AsyncWebServe
   request->send(200, "application/json", outRequest);
 };
 
-// -------------- Wifi -------------------
 
+
+
+// ===================== Wifi =====================
 void ApiServerHttp::accesPointWifi(JsonDocument &docBody, AsyncWebServerRequest *request) {
-  if (!docBody.containsKey("enableAP")) {
+  if (docBody["enableAP"].isNull()) {
     request->send(400, "application/json", "{\"error\":\"Faltan campos 'enableAP'\"}");
     return;
   }
   
-  WiFiManager wifi;
-  uint8_t enableAP = docBody["enableAP"];
-
-  JsonDocument response = DynamicJsonDocument (128);
-  response["enableAP"] = enableAP ? "true" : "false";
+  WiFiManager& wifi = WiFiManager::instance();
+  bool enableAP = docBody["enableAP"];
+  JsonDocument response;
+  response["enableAP"] = enableAP;
   
-  if (enableAP == 1) {
-    response["description"] = "modo AP habilitado correctamente";
-    wifi.startAccessPoint("12345678");
+  if (enableAP) {
+    if (wifi.startAccessPoint("12345678")) {
+      response["description"] = "modo AP habilitado correctamente";
+      response["ip"] = wifi.getLocalIP().toString();
+    } else {
+      response["description"] = "Error al habilitar el modo AP";
+    }
   } else {
     response["description"] = "modo AP deshabilitado correctamente";
     wifi.stopAccessPoint();
@@ -307,65 +314,85 @@ void ApiServerHttp::accesPointWifi(JsonDocument &docBody, AsyncWebServerRequest 
 
 
 void ApiServerHttp::conectToWifi(JsonDocument &docBody, AsyncWebServerRequest *request) {
-  if (
-    !docBody.containsKey("ssid") 
-    || !docBody.containsKey("password")
-    || !docBody.containsKey("apMode")
-    || !docBody.containsKey("deviceID")
-  ) {
+  
+  if (docBody["ssid"].isNull() || docBody["password"].isNull()) {
     request->send(400, "application/json", "{\"error\":\"Faltan campos 'ssid', 'password', 'apMode' o 'deviceID'\"}");
     return;
   }
   
-  WiFiManager wifi;
+  WiFiManager& wifi = WiFiManager::instance();
   String ssid = docBody["ssid"];
   String password = docBody["password"];
-  bool apMode = docBody["apMode"];
-  int deviceID = docBody["deviceID"];
 
-  JsonDocument response = DynamicJsonDocument (128);
+  JsonDocument response;
   response["ssid"] = ssid;
-  response["password"] = password;
-  response["apMode"] = apMode;
-  response["deviceID"] = deviceID;
-  String outRequest;
-
-  bool stateSaveConfig = wifi.changeNetwork(ssid, password);
-  if (!stateSaveConfig) {
-    response["description"] = "No se pudo guardar la configuración";
-    serializeJson(response, outRequest);
-    request->send(400, "application/json", outRequest);
-    return;
-  }
-  bool stateConnect = wifi.connectToWiFi();
-  if (!stateConnect) {
-    response["description"] = "No se pudo conectar a la red";
-    serializeJson(response, outRequest);
-    request->send(400, "application/json", outRequest);
-    return;
-  }
-
-  response["description"] = "conexion establecida correctamente";
-  serializeJson(response, outRequest);
-  request->send(200, "application/json", outRequest);
-};
-
-
-void ApiServerHttp::scannerWifi(JsonDocument &docBody, AsyncWebServerRequest *request) {
-  WiFiManager wifi;
-  std::vector<std::map<String, String>> networksJson = wifi.scanNetworks();
   
-  JsonDocument response = DynamicJsonDocument (2048);
+  bool stateSaveConfig = wifi.changeNetwork(ssid, password);
+  if (stateSaveConfig) {
+    response["description"] = "Conectado correctamente a la red";
+    response["ip"] = wifi.getLocalIP().toString();
+  } else {
+    response["description"] = "No se pudo conectar, AP activado como fallback";
+  }
+  
   String outRequest;
-
   serializeJson(response, outRequest);
   request->send(200, "application/json", outRequest);
 };
 
 
-// -------------- Time Press -------------------
+void ApiServerHttp::scannerWifi(AsyncWebServerRequest *request) {
+  WiFiManager& wifi = WiFiManager::instance();
+  JsonDocument response;
+
+  if (wifi.getScanState() == ScanStatus::SCANNING) {
+    response["description"] = "Ya hay un escaneo en curso";
+  } else {
+    wifi.startScanAsyncTask();
+    response["description"] = "Escaneo iniciado correctamente";
+  }
+
+  String out;
+  serializeJson(response, out);
+  request->send(200, "application/json", out);
+};
+
+
+void ApiServerHttp::getScannerWifiResult(AsyncWebServerRequest *request) {
+    WiFiManager& wifi = WiFiManager::instance();
+    JsonDocument response;
+
+    if (wifi.getScanState() == ScanStatus::SCANNING) {
+        response["status"] = "scanning";
+        response["description"] = "Escaneo aún en progreso";
+    } else if (wifi.getScanState() == ScanStatus::SUCCESS) {
+        response["status"] = "success";
+        JsonArray networks = response.createNestedArray("networks");
+
+        auto results = wifi.consumeScanResults();
+        for (auto &net : results) {
+            JsonObject obj = networks.createNestedObject();
+            obj["ssid"] = net["ssid"];
+            obj["rssi"] = net["rssi"];
+            obj["channel"] = net["channel"];
+            obj["encryption"] = net["encryption"];
+        }
+    } else {
+        response["status"] = "no_scan";
+        response["description"] = "No hay resultados de escaneo disponibles";
+    }
+
+    String out;
+    serializeJson(response, out);
+    request->send(200, "application/json", out);
+};
+
+
+
+
+// ===================== Time Press =====================
 void ApiServerHttp::setTimeLongPress(JsonDocument &docBody, AsyncWebServerRequest *request) {
-  if (!docBody.containsKey("timeLongPress")) {
+  if (docBody["timeLongPress"].isNull()) {
     request->send(400, "application/json", "{\"error\":\"Faltan campos 'timeLongPress'\"}");
     return;
   }

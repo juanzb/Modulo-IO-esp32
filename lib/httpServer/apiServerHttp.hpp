@@ -1,29 +1,36 @@
+#pragma once
+
 #include <cstdint>
 #include <ESPAsyncWebServer.h>
 #include <ArduinoJson.h>
+#include "connect_wifi.hpp"
 
 class ApiServerHttp {
-  public:
-  ApiServerHttp();
+  private:
+    WiFiManager* wifiManager;
 
-  // -------------- Outputs ------------------
+  public:
+    ApiServerHttp();
+
+  // ====================== Outputs ======================
   static void getAmountOutputs(AsyncWebServerRequest *request);
   static void writeValueOutput(JsonDocument &docBody, AsyncWebServerRequest *request);
   static void setValueStartUp(JsonDocument &docBody, AsyncWebServerRequest *request);
   static void enableStartUpLastState(JsonDocument &docBody, AsyncWebServerRequest *request);
 
-  // -------------- Inputs -------------------
+  // ====================== Inputs ======================-
   static void getAmountInputs(AsyncWebServerRequest *request);
   static void enableInput(JsonDocument &docBody, AsyncWebServerRequest *request);
   static void setModeInput(JsonDocument &docBody, AsyncWebServerRequest *request);
   static void setOutputToInput(JsonDocument &docBody, AsyncWebServerRequest *request);
   static void setValueModeNormalInput(JsonDocument &docBody, AsyncWebServerRequest *request);
 
-  // -------------- Wifi -------------------
-  static void accesPointWifi(JsonDocument &docBody, AsyncWebServerRequest *request);
-  static void conectToWifi(JsonDocument &docBody, AsyncWebServerRequest *request);
-  static void scannerWifi(JsonDocument &docBody, AsyncWebServerRequest *request);
+  // ====================== Wifi ======================-
+  void accesPointWifi(JsonDocument &docBody, AsyncWebServerRequest *request);
+  void conectToWifi(JsonDocument &docBody, AsyncWebServerRequest *request);
+  void scannerWifi(AsyncWebServerRequest *request);
+  void getScannerWifiResult(AsyncWebServerRequest *request);
 
-  // -------------- Time Press -------------------
+  // ====================== Time Press ======================-
   static void setTimeLongPress(JsonDocument &docBody, AsyncWebServerRequest *request);
 };

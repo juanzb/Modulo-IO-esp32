@@ -1,245 +1,384 @@
 #include "connect_wifi.hpp"
-#include <ArduinoJson.h>
 
+/* ================== SINGLETON ================== */
+WiFiManager& WiFiManager::instance() {
+    static WiFiManager singleton;
+    return singleton;
+}
+
+/* ================== CONSTRUCTOR ================== */
 WiFiManager::WiFiManager() {
-	config.deviceID = (uint32_t)ESP.getEfuseMac();
+    config.deviceID = (uint32_t)ESP.getEfuseMac();
 }
 
+/* ================== INICIALIZACIÓN ================== */
 void WiFiManager::begin() {
-	if (!LittleFS.begin(true)) {
-		Serial.println("[WiFiManager] Error montando LittleFS");
-		return;
-	}
+    Serial.println("[WiFiManager] Iniciando WiFiManager...");
 
-	loadConfig();
+    // Montar LittleFS
+    if (!LittleFS.begin(true)) {
+        Serial.println("[WiFiManager] Error al montar LittleFS!");
+        return;
+    }
+    Serial.println("[WiFiManager] LittleFS montado correctamente.");
 
-	if (config.apMode || config.ssid.isEmpty()) {
-		startAccessPoint();
-	} else {
-		connectToWiFi();
-	}
+    // Modo dual por seguridad
+    WiFi.mode(WIFI_AP_STA);
+
+    // Cargar configuración previa
+    loadConfig();
+
+    // Lógica de arranque
+    if (config.ssid.isEmpty() || config.apMode) {
+        Serial.println("[WiFiManager] No hay red guardada o AP forzado -> iniciar AP.");
+        startAccessPoint("12345678");
+    } else {
+        Serial.printf("[WiFiManager] Intentando conectar a SSID guardado: %s\n", config.ssid.c_str());
+        if (!connectToWiFi()) {
+            Serial.println("[WiFiManager] No se pudo conectar, activando AP.");
+            startAccessPoint("12345678");
+        }
+    }
 }
 
-bool WiFiManager::initWiFi() {
-	if (WiFi.status() == WL_CONNECTED) {
-		Serial.println("[WiFiManager] Ya conectado a WiFi");
-		return true;
-	}
-
-	WiFi.mode(WIFI_STA);
-	WiFi.begin(config.ssid.c_str(), config.pass.c_str());
-
-	unsigned long start = millis();
-	const unsigned long timeout = 8000; // 8 segundos
-
-	Serial.printf("[WiFiManager] Conectando a SSID: %s ...\n", config.ssid.c_str());
-
-	while (WiFi.status() != WL_CONNECTED && millis() - start < timeout) {
-		delay(250);
-		Serial.print(".");
-	}
-
-	startAccessPoint();
-
-	if (WiFi.status() == WL_CONNECTED) {
-		Serial.printf("\n[WiFiManager] Conectado! IP: %s\n", WiFi.localIP().toString().c_str());
-		return true;
-	} else {
-		Serial.println("\n[WiFiManager] No se pudo conectar, activando AP...");
-		return false;
-	}
+/* ================== LOOP ================== */
+void WiFiManager::loop() {
+    updateConnection();
 }
 
-std::vector<std::map<String, String>> WiFiManager::scanNetworks() {
-	std::vector<std::map<String, String>> networksFound = {};
-	Serial.println("Scan start");
-  int AmountNetworsFound = WiFi.scanNetworks(); 	// WiFi.scanNetworks will return the number of networks found.
-	
-  if (AmountNetworsFound == 0) {
-		Serial.println("no networks found");
-		return networksFound;
-  }
-	
-	Serial.println(AmountNetworsFound + " networks found");
-	Serial.println("Nr | SSID | RSSI | CH | Encryption");
-
-	for (int i = 0; i < AmountNetworsFound; ++i) {
-		// Print SSID and RSSI for each network found
-		Serial.printf("%2d", i + 1);
-		Serial.print(" | ");
-		Serial.printf("%-32.32s", WiFi.SSID(i).c_str());
-		Serial.print(" | ");
-		Serial.printf("%4ld", WiFi.RSSI(i));
-		Serial.print(" | ");
-		Serial.printf("%2ld", WiFi.channel(i));
-		Serial.print(" | ");
-		switch (WiFi.encryptionType(i)) {
-			case WIFI_AUTH_OPEN:            Serial.print("open"); break;
-			case WIFI_AUTH_WEP:             Serial.print("WEP"); break;
-			case WIFI_AUTH_WPA_PSK:         Serial.print("WPA"); break;
-			case WIFI_AUTH_WPA2_PSK:        Serial.print("WPA2"); break;
-			case WIFI_AUTH_WPA_WPA2_PSK:    Serial.print("WPA+WPA2"); break;
-			case WIFI_AUTH_WPA2_ENTERPRISE: Serial.print("WPA2-EAP"); break;
-			case WIFI_AUTH_WPA3_PSK:        Serial.print("WPA3"); break;
-			case WIFI_AUTH_WPA2_WPA3_PSK:   Serial.print("WPA2+WPA3"); break;
-			case WIFI_AUTH_WAPI_PSK:        Serial.print("WAPI"); break;
-			default:                        Serial.print("unknown");
-		}
-
-		networksFound.push_back({
-			{"ssid", WiFi.SSID(i).c_str()},
-			{"rssi", String(WiFi.RSSI(i))},
-			{"channel", String(WiFi.channel(i))},
-			{"encryption", String(WiFi.encryptionType(i))}
-		});
-
-		Serial.println();
-		delay(10);
-  }
-
-  WiFi.scanDelete(); 	// Delete the scan result to free memory for code below.
-	return networksFound;
+/* ================== SERVER (opcional) ================== */
+#ifdef USE_ASYNC_SERVER
+void WiFiManager::attachServer(AsyncWebServer* serverPtr) {
+    this->server = serverPtr;
+    this->serverRunning = true;
 }
+#endif
 
-
+/* ================== CONTROL AP ================== */
 bool WiFiManager::startAccessPoint(const String& apPassword) {
-	String apName = getAPName();
-	WiFi.mode(WIFI_AP_STA);
-	
-	if (WiFi.getMode() == WIFI_AP) {
-		Serial.println("[WiFiManager] Modo AP-STA activado");
-		return true;
-	}
-	else {
-		bool enableAP = WiFi.softAP(apName.c_str(), apPassword.c_str());
-		if (enableAP) {
-			Serial.printf("[WiFiManager] AP activado: %s | IP: %s\n", apName.c_str(), WiFi.softAPIP().toString().c_str());
-			config.apMode = true;
-		} else {
-			Serial.println("[WiFiManager] Error al activar AP");
-		}
-		return enableAP;
-	}
+    String apName = getAPName();
+    Serial.printf("[WiFiManager] Iniciando AP: %s\n", apName.c_str());
 
+    WiFi.mode(WIFI_AP_STA);
+    bool ok = WiFi.softAP(apName.c_str(), apPassword.c_str());
+    if (ok) {
+        config.apMode = true;
+        saveConfig();
+        Serial.printf("[WiFiManager] AP activo | IP: %s\n", WiFi.softAPIP().toString().c_str());
+    } else {
+        Serial.println("[WiFiManager] Error al iniciar AP");
+    }
+    return ok;
 }
 
 void WiFiManager::stopAccessPoint() {
-	WiFi.softAPdisconnect(true);
-	Serial.println("[WiFiManager] AP desactivado");
-	config.apMode = false;
+    if (WiFi.softAPdisconnect(true)) {
+        Serial.println("[WiFiManager] AP deshabilitado");
+        config.apMode = false;
+        saveConfig();
+    } else {
+        Serial.println("[WiFiManager] Error al desactivar AP");
+    }
+}
+
+/* ================== CAMBIO DE RED ================== */
+bool WiFiManager::changeNetwork(const String& ssid, const String& pass) {
+    Serial.printf("[WiFiManager] Cambiando red a: %s\n", ssid.c_str());
+    config.ssid = ssid;
+    config.pass = pass;
+    config.apMode = false;
+
+    if (!saveConfig()) {
+        Serial.println("[WiFiManager] Error guardando configuración");
+        return false;
+    }
+
+    if (!connectToWiFi()) {
+        Serial.println("[WiFiManager] No se pudo conectar a la nueva red. Activando AP...");
+        startAccessPoint("12345678");
+        return false;
+    }
+
+    stopAccessPoint();
+    return true;
+}
+
+/* ================== CONEXIÓN / RECONEXIÓN ================== */
+bool WiFiManager::initWiFi() {
+    WiFi.begin(config.ssid.c_str(), config.pass.c_str());
+    unsigned long start = millis();
+    Serial.printf("[WiFiManager] Conectando a %s ...\n", config.ssid.c_str());
+    while (WiFi.status() != WL_CONNECTED && millis() - start < CONNECT_TIMEOUT_MS) {
+        delay(100);
+        yield();
+    }
+
+    if (WiFi.status() == WL_CONNECTED) {
+        Serial.printf("[WiFiManager] Conectado. IP: %s\n", WiFi.localIP().toString().c_str());
+        if (connCallback) connCallback(true);
+        return true;
+    }
+
+    Serial.println("[WiFiManager] Falló conexión WiFi.");
+    WiFi.disconnect();
+    if (connCallback) connCallback(false);
+    return false;
 }
 
 bool WiFiManager::connectToWiFi() {
-	if (config.ssid.isEmpty()) {
-		Serial.println("[WiFiManager] SSID vacío, activando AP...");
-		startAccessPoint();
-		return false;
-	}
+    if (config.ssid.isEmpty()) {
+        Serial.println("[WiFiManager] SSID vacío, iniciando AP...");
+        startAccessPoint("12345678");
+        return false;
+    }
 
-	std::vector<std::map<String, String>> networksFound = scanNetworks();
+    if (initWiFi()) {
+        config.apMode = false;
+        saveConfig();
+        return true;
+    }
 
-	// Verifica si la red está disponible
-	bool found = false;
-	for (std::map<String, String> network : networksFound) {
-		if (network["ssid"] == config.ssid) {
-			found = true;
-			break;
-		}
-	}
-
-	for (int i = 0; i < WiFi.scanComplete(); ++i) {
-		if (WiFi.SSID(i) == config.ssid) {
-			found = true;
-			break;
-		}
-	}
-
-	if (!found) {
-		Serial.println("[WiFiManager] SSID no encontrado, activando AP...");
-		startAccessPoint();
-		return false;
-	}
-
-	return initWiFi();
+    startAccessPoint("12345678");
+    return false;
 }
 
-void WiFiManager::reconnectIfNeeded() {
-	if (WiFi.status() != WL_CONNECTED && !config.apMode) {
-		Serial.println("[WiFiManager] WiFi desconectado, intentando reconectar...");
-		connectToWiFi();
-	}
+void WiFiManager::updateConnection() {
+    static unsigned long lastAttempt = 0;
+    if (millis() - lastAttempt < RECONNECT_DELAY_MS) return;
+    lastAttempt = millis();
+
+    if (WiFi.status() != WL_CONNECTED && !config.apMode && !reconnecting) {
+        reconnecting = true;
+        Serial.println("[WiFiManager] WiFi desconectado. Intentando reconectar...");
+        connectToWiFi();
+        reconnecting = false;
+    }
 }
 
-bool WiFiManager::changeNetwork(const String& ssid, const String& pass) {
-	config.ssid = ssid;
-	config.pass = pass;
-
-	if (!saveConfig()) {
-		Serial.println("[WiFiManager] Error guardando nueva configuración");
-		return false;
-	}
-
-	return connectToWiFi();
+void WiFiManager::forceReconnect() {
+    WiFi.disconnect(true);
+    delay(100);
+    connectToWiFi();
 }
 
-// --- PRIVATE ---
+/* ================== ESCANEO ================== */
+void WiFiManager::startScanAsyncTask() {
+    if (scanState == ScanStatus::SCANNING) return;
 
+    xTaskCreatePinnedToCore(
+        scanTaskAdapter,
+        "scanTask",
+        SCAN_TASK_STACK,
+        this,
+        SCAN_TASK_PRIO,
+        nullptr,
+        0
+    );
+}
+
+void WiFiManager::scanTaskAdapter(void* arg) {
+  // Lanza la tarea FreeRTOS para no bloquear el loop principal
+  xTaskCreatePinnedToCore(
+    [](void *param) {
+      bool apActive = (WiFi.getMode() & WIFI_AP);
+      
+      if (!(WiFi.getMode() & WIFI_STA)) {
+        WiFi.mode(apActive ? WIFI_AP_STA : WIFI_STA);
+      }
+
+      delay(200);
+      int n = WiFi.scanNetworks(false, true);
+
+      if (n < 0) {
+        Serial.println("[ScanManager] Escaneo fallido (-2)");
+      } else {
+        Serial.printf("[ScanManager] Escaneo completado. %d redes encontradas\n", n);
+        for (int i = 0; i < n; ++i) {
+          Serial.printf("  SSID: %s | RSSI: %d | Canal: %d\n",
+                        WiFi.SSID(i).c_str(), WiFi.RSSI(i), WiFi.channel(i));
+        }
+      }
+
+      vTaskDelete(NULL);
+    },
+    "wifi_scan_task",
+    4096, // stack size
+    NULL,
+    1,    // prioridad baja
+    NULL,
+    1     // ejecuta en core 1 (donde corre el loop principal)
+  );
+}
+
+void WiFiManager::scanTaskEntry() {
+    startScanNetworks();
+}
+
+void WiFiManager::startScanNetworks() {
+    if (scanState == ScanStatus::SCANNING) return;
+
+#ifdef USE_ASYNC_SERVER
+    if (serverRunning && server) {
+        Serial.println("[ScanManager] Deteniendo servidor temporalmente para escanear...");
+        stopServer();
+    }
+#endif
+
+    WiFi.mode(WIFI_AP_STA);
+    delay(100);
+    scanState = ScanStatus::SCANNING;
+    int result = WiFi.scanNetworks(true, false);
+
+    unsigned long start = millis();
+    while (WiFi.scanComplete() == WIFI_SCAN_RUNNING && millis() - start < 10000) {
+        delay(100);
+        yield();
+    }
+
+    int scanResult = WiFi.scanComplete();
+    WiFi.scanDelete();
+
+    portENTER_CRITICAL(&lock);
+    scanNetworksResults.clear();
+    portEXIT_CRITICAL(&lock);
+
+    if (scanResult <= 0) {
+        Serial.printf("[ScanManager] Escaneo fallido (%d)\n", scanResult);
+        scanState = ScanStatus::FAILED;
+#ifdef USE_ASYNC_SERVER
+        if (server) startServer();
+#endif
+        if (scanCallback) scanCallback(scanState);
+        return;
+    }
+
+    Serial.printf("[ScanManager] %d redes encontradas.\n", scanResult);
+
+    portENTER_CRITICAL(&lock);
+    for (int i = 0; i < scanResult; i++) {
+        scanNetworksResults.push_back({
+            {"ssid", WiFi.SSID(i)},
+            {"rssi", String(WiFi.RSSI(i))},
+            {"channel", String(WiFi.channel(i))},
+            {"encryption", String(WiFi.encryptionType(i))}
+        });
+    }
+    portEXIT_CRITICAL(&lock);
+
+    scanState = ScanStatus::SUCCESS;
+#ifdef USE_ASYNC_SERVER
+    if (server) startServer();
+#endif
+    if (scanCallback) scanCallback(scanState);
+}
+
+ScanStatus WiFiManager::getScanState() {
+    return scanState;
+}
+
+std::vector<std::map<String, String>> WiFiManager::consumeScanResults() {
+    if (scanState != ScanStatus::SUCCESS) return {};
+    portENTER_CRITICAL(&lock);
+    auto result = std::move(scanNetworksResults);
+    scanNetworksResults.clear();
+    portEXIT_CRITICAL(&lock);
+    scanState = ScanStatus::STOP;
+    return result;
+}
+
+/* ================== PERSISTENCIA ================== */
 void WiFiManager::loadConfig() {
-	if (!LittleFS.exists("/config.json")) {
-		Serial.println("[WiFiManager] No existe config.json, activando AP por defecto");
-		config.apMode = true;
-		saveConfig();
-		return;
-	}
+    if (!LittleFS.exists(CONFIG_PATH)) {
+        Serial.println("[WiFiManager] No existe config.json, creando configuración por defecto.");
+        config.apMode = true;
+        config.ssid = "";
+        config.pass = "";
+        saveConfig();
+        return;
+    }
 
-	File f = LittleFS.open("/config.json", "r");
-	if (!f) {
-		Serial.println("[WiFiManager] Error abriendo config.json");
-		config.apMode = true;
-		return;
-	}
+    File file = LittleFS.open(CONFIG_PATH, "r");
+    if (!file) {
+        Serial.println("[WiFiManager] Error abriendo config.json");
+        config.apMode = true;
+        return;
+    }
 
-	DynamicJsonDocument doc(512);
-	DeserializationError err = deserializeJson(doc, f);
-	f.close();
+    JsonDocument doc;
+    if (deserializeJson(doc, file)) {
+        Serial.println("[WiFiManager] Error leyendo config.json, usando defaults.");
+        config.apMode = true;
+        return;
+    }
+    file.close();
 
-	if (err) {
-		Serial.println("[WiFiManager] Error leyendo config.json, activando AP");
-		config.apMode = true;
-		return;
-	}
+    config.ssid = doc["ssid"] | "";
+    config.pass = doc["pass"] | "";
+    config.apMode = doc["apMode"] | config.ssid.isEmpty();
+    config.deviceID = doc["deviceID"] | (uint32_t)ESP.getEfuseMac();
 
-	config.apMode = doc["apMode"] | true;
-	config.ssid = doc["ssid"] | "";
-	config.pass = doc["pass"] | "";
-	config.deviceID = doc["deviceID"] | (uint32_t)ESP.getEfuseMac();
+    Serial.printf("[WiFiManager] Configuración cargada. SSID: %s, AP: %s\n",
+                  config.ssid.c_str(),
+                  config.apMode ? "true" : "false");
 }
 
 bool WiFiManager::saveConfig() {
-	File f = LittleFS.open("/config.json", "w");
-	if (!f) {
-		Serial.println("[WiFiManager] No se pudo abrir config.json para escritura");
-		return false;
-	}
+    File file = LittleFS.open(CONFIG_PATH, "w");
+    if (!file) {
+        Serial.println("[WiFiManager] Error abriendo config.json para escritura.");
+        return false;
+    }
 
-	DynamicJsonDocument doc(512);
-	doc["apMode"] = config.apMode;
-	doc["ssid"] = config.ssid;
-	doc["pass"] = config.pass;
-	doc["deviceID"] = config.deviceID;
+    JsonDocument doc;
+    doc["apMode"] = config.apMode;
+    doc["ssid"] = config.ssid;
+    doc["pass"] = config.pass;
+    doc["deviceID"] = config.deviceID;
 
-	if (serializeJson(doc, f) == 0) {
-		Serial.println("[WiFiManager] Error serializando JSON");
-		f.close();
-		return false;
-	}
+    if (serializeJson(doc, file) == 0) {
+        Serial.println("[WiFiManager] Error escribiendo config.json");
+        file.close();
+        return false;
+    }
 
-	f.close();
-	Serial.println("[WiFiManager] Configuración guardada");
-	return true;
+    file.close();
+    return true;
 }
 
+/* ================== CALLBACKS ================== */
+void WiFiManager::onScanComplete(ScanCompleteCallback cb) { scanCallback = cb; }
+void WiFiManager::onConnectionChange(ConnectionCallback cb) { connCallback = cb; }
+
+/* ================== UTILIDADES ================== */
 String WiFiManager::getAPName() {
-	return "ESP32_" + String(config.deviceID, HEX);
+    return "ESP32_" + String(config.deviceID, HEX);
 }
 
+IPAddress WiFiManager::getLocalIP() {
+    return WiFi.localIP();
+}
+
+bool WiFiManager::isAPActive() {
+    return config.apMode;
+}
+
+WiFiConfig WiFiManager::getConfig() {
+    return config;
+}
+
+/* ================== SERVER CONTROL INTERNO ================== */
+#ifdef USE_ASYNC_SERVER
+void WiFiManager::stopServer() {
+    if (server && serverRunning) {
+        server->end();
+        serverRunning = false;
+    }
+}
+
+void WiFiManager::startServer() {
+    if (server && !serverRunning) {
+        server->begin();
+        serverRunning = true;
+    }
+}
+#endif
