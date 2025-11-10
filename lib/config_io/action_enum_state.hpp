@@ -2,49 +2,60 @@
 #include <cstdint>
 
 /**
- * Reset = 0, state initial of button (not pressed)
- * Short = 1, detection of pressed button for a short time
- * Long = 2, detection of pressed button for a long time
+ * Eventos detectados al presionar un botón.
+ * 
+ * - stadby, state initial of button (not pressed)
+ * - Short, detection of pressed button for a short time
+ * - Long, detection of pressed button for a long time
  */
 enum class EventPress: uint8_t {
-  STANDBY = 0,
-  SHORT = 1,
-  LONG = 2,
+  STANDBY, // state initial of button (not pressed)
+  SHORT,   // detection of pressed button for a short time
+  LONG     // detection of pressed button for a long time
 };
 
 /**
- * Out Event = 0, button return to initial state (not pressed)
- * In Event = 1, button is pressed on the short or long time
+ * Estado del evento de botón.
+ * 
+ * - OutEvent, button return to initial state (not pressed)
+ * - InEvent, button is pressed on the short or long time
  */
 enum class EventState: uint8_t {
-  OUT_EVENT = 0,
-  IN_EVENT = 1,
+  OUT_EVENT, // button return to initial state (not pressed)
+  IN_EVENT   // button is pressed on the short or long time
 };
 
 /**
- * Inactive = 0, input/output is LOW
- * Active = 1, input/output is HIGH
+ * Estado lógico de una entrada o salida digital.
+ * 
+ * - Inactive, input/output is LOW
+ * - Active, input/output is HIGH
  */
 enum class StateIO: uint8_t {
-  INACTIVE = 0,
-  ACTIVE = 1,
+  INACTIVE, // input/output is LOW
+  ACTIVE    // input/output is HIGH
 };
 
 
 /**
- * Inactive = 0, input/output is LOW
- * Active = 1, input/output is HIGH
+ * Estado de habilitación o deshabilitación de una función.
+ * 
+ * - Inactive, input/output is LOW
+ * - Active, input/output is HIGH
  */
 enum class EnableDisable: uint8_t {
-  DISABLE = 0,
-  ENABLE = 1,
+  DISABLE, // Funcionalidad desactivada
+  ENABLE   // Funcionalidad activada
 };
 
 
 /**
- * Normal = 0, Commutated = 1
+ * Modo de control de una entrada sobre la salida
+ * 
+ * - Normal 
+ * - Commutated
  */
 enum class ModeInput: uint8_t {
-  NORMAL = 0,
-  COMMUTED = 1,
+  NORMAL,   // Lectura directa (sin invertir)
+  COMMUTED  // Lectura conmutada (invertida)
 };
