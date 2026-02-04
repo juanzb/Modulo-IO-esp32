@@ -170,21 +170,21 @@ void setupHttpServer() {
     }
   );
 
-  server.on(
-    "/api/setup/wifi/scanner/start", 
-    HTTP_GET, 
-    [](AsyncWebServerRequest *request){
-      apiServerHandler.scannerWifi(request);
-    }
-  );
+  // server.on(
+  //   "/api/setup/wifi/scanner/start", 
+  //   HTTP_GET, 
+  //   [](AsyncWebServerRequest *request){
+  //     apiServerHandler.scannerWifi(request);
+  //   }
+  // );
 
-  server.on(
-    "/api/setup/wifi/scanner/result", 
-    HTTP_GET, 
-    [](AsyncWebServerRequest *request){
-      apiServerHandler.getScannerWifiResult(request);
-    }
-  );
+  // server.on(
+  //   "/api/setup/wifi/scanner/result", 
+  //   HTTP_GET, 
+  //   [](AsyncWebServerRequest *request){
+  //     apiServerHandler.getScannerWifiResult(request);
+  //   }
+  // );
 
 
 

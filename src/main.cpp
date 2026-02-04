@@ -6,11 +6,9 @@
 #include <handleOutput.hpp>
 #include <handleInput.hpp>
 
-WiFiManager& wifi = WiFiManager::instance();
 
 #define EEPROM_SIZE 12 // Tamaño de la EEPROM definida desde laEEPROM_ADDR_B00 hasta las EEPROM_ADDR_B11
-int stage = 0;
-uint16_t timeStart = 0;
+WiFiManager wifi = WiFiManager::instance();
 
 void setup() {
   Serial.begin(115200);
@@ -21,6 +19,7 @@ void setup() {
   }
 
 void loop() {
+  wifi.loop();
   HandleInput::loopInputs();
 }
 

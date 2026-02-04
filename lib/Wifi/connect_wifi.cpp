@@ -1,14 +1,15 @@
 #include "connect_wifi.hpp"
 
-/* ================== SINGLETON ================== */
-WiFiManager& WiFiManager::instance() {
-    static WiFiManager singleton;
-    return singleton;
-}
-
 /* ================== CONSTRUCTOR ================== */
 WiFiManager::WiFiManager() {
     config.deviceID = (uint32_t)ESP.getEfuseMac();
+    config.ssid = "ZARACHE BARRIOS";
+    config.pass = "z4r4ch3b4rr10s";
+}
+
+WiFiManager& WiFiManager::instance() {
+    static WiFiManager instance;
+    return instance;
 }
 
 /* ================== INICIALIZACIÓN ================== */
@@ -46,13 +47,6 @@ void WiFiManager::loop() {
     updateConnection();
 }
 
-/* ================== SERVER (opcional) ================== */
-#ifdef USE_ASYNC_SERVER
-void WiFiManager::attachServer(AsyncWebServer* serverPtr) {
-    this->server = serverPtr;
-    this->serverRunning = true;
-}
-#endif
 
 /* ================== CONTROL AP ================== */
 bool WiFiManager::startAccessPoint(const String& apPassword) {
@@ -115,13 +109,11 @@ bool WiFiManager::initWiFi() {
 
     if (WiFi.status() == WL_CONNECTED) {
         Serial.printf("[WiFiManager] Conectado. IP: %s\n", WiFi.localIP().toString().c_str());
-        if (connCallback) connCallback(true);
         return true;
     }
 
     Serial.println("[WiFiManager] Falló conexión WiFi.");
     WiFi.disconnect();
-    if (connCallback) connCallback(false);
     return false;
 }
 
@@ -161,130 +153,6 @@ void WiFiManager::forceReconnect() {
     connectToWiFi();
 }
 
-/* ================== ESCANEO ================== */
-void WiFiManager::startScanAsyncTask() {
-    if (scanState == ScanStatus::SCANNING) return;
-
-    xTaskCreatePinnedToCore(
-        scanTaskAdapter,
-        "scanTask",
-        SCAN_TASK_STACK,
-        this,
-        SCAN_TASK_PRIO,
-        nullptr,
-        0
-    );
-}
-
-void WiFiManager::scanTaskAdapter(void* arg) {
-  // Lanza la tarea FreeRTOS para no bloquear el loop principal
-  xTaskCreatePinnedToCore(
-    [](void *param) {
-      bool apActive = (WiFi.getMode() & WIFI_AP);
-      
-      if (!(WiFi.getMode() & WIFI_STA)) {
-        WiFi.mode(apActive ? WIFI_AP_STA : WIFI_STA);
-      }
-
-      delay(200);
-      int n = WiFi.scanNetworks(false, true);
-
-      if (n < 0) {
-        Serial.println("[ScanManager] Escaneo fallido (-2)");
-      } else {
-        Serial.printf("[ScanManager] Escaneo completado. %d redes encontradas\n", n);
-        for (int i = 0; i < n; ++i) {
-          Serial.printf("  SSID: %s | RSSI: %d | Canal: %d\n",
-                        WiFi.SSID(i).c_str(), WiFi.RSSI(i), WiFi.channel(i));
-        }
-      }
-
-      vTaskDelete(NULL);
-    },
-    "wifi_scan_task",
-    4096, // stack size
-    NULL,
-    1,    // prioridad baja
-    NULL,
-    1     // ejecuta en core 1 (donde corre el loop principal)
-  );
-}
-
-void WiFiManager::scanTaskEntry() {
-    startScanNetworks();
-}
-
-void WiFiManager::startScanNetworks() {
-    if (scanState == ScanStatus::SCANNING) return;
-
-#ifdef USE_ASYNC_SERVER
-    if (serverRunning && server) {
-        Serial.println("[ScanManager] Deteniendo servidor temporalmente para escanear...");
-        stopServer();
-    }
-#endif
-
-    WiFi.mode(WIFI_AP_STA);
-    delay(100);
-    scanState = ScanStatus::SCANNING;
-    int result = WiFi.scanNetworks(true, false);
-
-    unsigned long start = millis();
-    while (WiFi.scanComplete() == WIFI_SCAN_RUNNING && millis() - start < 10000) {
-        delay(100);
-        yield();
-    }
-
-    int scanResult = WiFi.scanComplete();
-    WiFi.scanDelete();
-
-    portENTER_CRITICAL(&lock);
-    scanNetworksResults.clear();
-    portEXIT_CRITICAL(&lock);
-
-    if (scanResult <= 0) {
-        Serial.printf("[ScanManager] Escaneo fallido (%d)\n", scanResult);
-        scanState = ScanStatus::FAILED;
-#ifdef USE_ASYNC_SERVER
-        if (server) startServer();
-#endif
-        if (scanCallback) scanCallback(scanState);
-        return;
-    }
-
-    Serial.printf("[ScanManager] %d redes encontradas.\n", scanResult);
-
-    portENTER_CRITICAL(&lock);
-    for (int i = 0; i < scanResult; i++) {
-        scanNetworksResults.push_back({
-            {"ssid", WiFi.SSID(i)},
-            {"rssi", String(WiFi.RSSI(i))},
-            {"channel", String(WiFi.channel(i))},
-            {"encryption", String(WiFi.encryptionType(i))}
-        });
-    }
-    portEXIT_CRITICAL(&lock);
-
-    scanState = ScanStatus::SUCCESS;
-#ifdef USE_ASYNC_SERVER
-    if (server) startServer();
-#endif
-    if (scanCallback) scanCallback(scanState);
-}
-
-ScanStatus WiFiManager::getScanState() {
-    return scanState;
-}
-
-std::vector<std::map<String, String>> WiFiManager::consumeScanResults() {
-    if (scanState != ScanStatus::SUCCESS) return {};
-    portENTER_CRITICAL(&lock);
-    auto result = std::move(scanNetworksResults);
-    scanNetworksResults.clear();
-    portEXIT_CRITICAL(&lock);
-    scanState = ScanStatus::STOP;
-    return result;
-}
 
 /* ================== PERSISTENCIA ================== */
 void WiFiManager::loadConfig() {
@@ -345,17 +213,14 @@ bool WiFiManager::saveConfig() {
     return true;
 }
 
-/* ================== CALLBACKS ================== */
-void WiFiManager::onScanComplete(ScanCompleteCallback cb) { scanCallback = cb; }
-void WiFiManager::onConnectionChange(ConnectionCallback cb) { connCallback = cb; }
 
 /* ================== UTILIDADES ================== */
 String WiFiManager::getAPName() {
-    return "ESP32_" + String(config.deviceID, HEX);
+    return "ESP32-" + String(config.deviceID, HEX);
 }
 
 IPAddress WiFiManager::getLocalIP() {
-    return WiFi.localIP();
+  return WiFi.localIP();
 }
 
 bool WiFiManager::isAPActive() {
@@ -366,19 +231,3 @@ WiFiConfig WiFiManager::getConfig() {
     return config;
 }
 
-/* ================== SERVER CONTROL INTERNO ================== */
-#ifdef USE_ASYNC_SERVER
-void WiFiManager::stopServer() {
-    if (server && serverRunning) {
-        server->end();
-        serverRunning = false;
-    }
-}
-
-void WiFiManager::startServer() {
-    if (server && !serverRunning) {
-        server->begin();
-        serverRunning = true;
-    }
-}
-#endif

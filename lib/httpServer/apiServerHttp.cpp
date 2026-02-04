@@ -341,51 +341,51 @@ void ApiServerHttp::conectToWifi(JsonDocument &docBody, AsyncWebServerRequest *r
 };
 
 
-void ApiServerHttp::scannerWifi(AsyncWebServerRequest *request) {
-  WiFiManager& wifi = WiFiManager::instance();
-  JsonDocument response;
+// void ApiServerHttp::scannerWifi(AsyncWebServerRequest *request) {
+//   WiFiManager& wifi = WiFiManager::instance();
+//   JsonDocument response;
 
-  if (wifi.getScanState() == ScanStatus::SCANNING) {
-    response["description"] = "Ya hay un escaneo en curso";
-  } else {
-    wifi.startScanAsyncTask();
-    response["description"] = "Escaneo iniciado correctamente";
-  }
+//   if (wifi.getScanState() == ScanStatus::SCANNING) {
+//     response["description"] = "Ya hay un escaneo en curso";
+//   } else {
+//     wifi.startScanAsyncTask();
+//     response["description"] = "Escaneo iniciado correctamente";
+//   }
 
-  String out;
-  serializeJson(response, out);
-  request->send(200, "application/json", out);
-};
+//   String out;
+//   serializeJson(response, out);
+//   request->send(200, "application/json", out);
+// };
 
 
-void ApiServerHttp::getScannerWifiResult(AsyncWebServerRequest *request) {
-    WiFiManager& wifi = WiFiManager::instance();
-    JsonDocument response;
+// void ApiServerHttp::getScannerWifiResult(AsyncWebServerRequest *request) {
+//     WiFiManager& wifi = WiFiManager::instance();
+//     JsonDocument response;
 
-    if (wifi.getScanState() == ScanStatus::SCANNING) {
-        response["status"] = "scanning";
-        response["description"] = "Escaneo aún en progreso";
-    } else if (wifi.getScanState() == ScanStatus::SUCCESS) {
-        response["status"] = "success";
-        JsonArray networks = response.createNestedArray("networks");
+//     if (wifi.getScanState() == ScanStatus::SCANNING) {
+//         response["status"] = "scanning";
+//         response["description"] = "Escaneo aún en progreso";
+//     } else if (wifi.getScanState() == ScanStatus::SUCCESS) {
+//         response["status"] = "success";
+//         JsonArray networks = response.createNestedArray("networks");
 
-        auto results = wifi.consumeScanResults();
-        for (auto &net : results) {
-            JsonObject obj = networks.createNestedObject();
-            obj["ssid"] = net["ssid"];
-            obj["rssi"] = net["rssi"];
-            obj["channel"] = net["channel"];
-            obj["encryption"] = net["encryption"];
-        }
-    } else {
-        response["status"] = "no_scan";
-        response["description"] = "No hay resultados de escaneo disponibles";
-    }
+//         auto results = wifi.consumeScanResults();
+//         for (auto &net : results) {
+//             JsonObject obj = networks.createNestedObject();
+//             obj["ssid"] = net["ssid"];
+//             obj["rssi"] = net["rssi"];
+//             obj["channel"] = net["channel"];
+//             obj["encryption"] = net["encryption"];
+//         }
+//     } else {
+//         response["status"] = "no_scan";
+//         response["description"] = "No hay resultados de escaneo disponibles";
+//     }
 
-    String out;
-    serializeJson(response, out);
-    request->send(200, "application/json", out);
-};
+//     String out;
+//     serializeJson(response, out);
+//     request->send(200, "application/json", out);
+// };
 
 
 
