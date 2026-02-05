@@ -25,23 +25,22 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <LittleFS.h>
-#include <ArduinoJson.h>
-#include <vector>
-#include <map>
+#include <logger.hpp>
 
-/* Estructura de configuración que se almacena en LittleFS */
-struct WiFiConfig {
-    bool apMode = true;         // si true, iniciar en AP si no hay SSID válido
-    String ssid = "";           // SSID guardado
-    String pass = "";           // Pass guardado
-    uint32_t deviceID = 0;      // ID del dispositivo (por ejemplo ESP.getEfuseMac())
+struct WifiConfig {
+  String ssid;
+  String pass;
+  bool apMode;
+  uint32_t deviceID;
 };
 
 class WiFiManager {
-  
+  WiFiManager();
+
   public:
     static WiFiManager& instance();
-  
+    WifiConfig config;
+
   /* Inicialización */
     void begin();               // Monta LittleFS, carga config, arranca AP o intenta conectar
     void loop();                // Llamar desde loop() -> gestion interna ligera
@@ -64,10 +63,10 @@ class WiFiManager {
     /* ================== PERSISTENCIA ================== */
     // Guarda configuración actual (apMode, ssid, pass, deviceID) en LittleFS
     // Devuelve true si se escribió correctamente.
-    bool saveConfig();
+    // bool saveConfig();
     
     // Carga configuración desde LittleFS. Si no existe, deja defaults y crea archivo.
-    void loadConfig();
+    // void loadConfig();
   
     /* ================== UTILIDADES ================== */
     // Obtener nombre del AP (por defecto "ESP32_<deviceID>")
@@ -80,11 +79,9 @@ class WiFiManager {
     bool isAPActive();
     
     // Obtener estado actual de la configuración en RAM
-    WiFiConfig getConfig();
+    // WiFiConfig getConfig();
     
   private:
-
-    WiFiManager();
     /* Conexión/gestión interna */
     bool initWiFi();           // intentado seguro de conexión (bloqueante corto)
     bool connectToWiFi();      // lógica para decidir: conectar o levantar AP
@@ -94,13 +91,7 @@ class WiFiManager {
     void stopServer();
     void startServer();
     
-    private:
-    /* Estado interno */
-    WiFiConfig config;
-    
-    /* Config file path y parámetros */
-    const char* CONFIG_PATH = "/config.json";
-
+  private:
     /* Tiempo entre reintentos de conexión (ms) y límites */
     const unsigned long CONNECT_TIMEOUT_MS = 8000;
     const unsigned long RECONNECT_DELAY_MS = 5000;
