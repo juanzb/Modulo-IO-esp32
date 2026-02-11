@@ -9,7 +9,7 @@
 
 #define EEPROM_SIZE 12 // Tamaño de la EEPROM definida desde laEEPROM_ADDR_B00 hasta las EEPROM_ADDR_B11
 WiFiManager wifi = WiFiManager::instance();
-Logger logger("MAIN");
+static Logger logger("MAIN");
 
 void setup() {
   Serial.begin(115200);
